@@ -2,6 +2,7 @@
 
 import os
 import time
+import re
 
 import bpy
 import mathutils
@@ -237,14 +238,12 @@ def write_file(filepath, objects, scene,
         "circles" : "\n".join(generate_circles(c) for c in gcircles)
     }
 
+    text = text.replace(',', '').replace('{', '').replace('}', '').replace('{', '').replace('[', '').replace(']', '')
+    text = "".join([s for s in text.strip().splitlines(True) if s.strip()])
+
     fw(text)
     file.close()
 
-    os.system("sed -i 's/,//g' " + filepath)
-    os.system("sed -i 's/\(\[\|\]\)//g' " + filepath)
-    os.system("sed -i 's/{//g' " + filepath)
-    os.system("sed -i 's/}//g' " + filepath)
-    os.system("sed -i '/^$/d' " + filepath)
     # copy all collected files.
     bpy_extras.io_utils.path_reference_copy(copy_set)
 
