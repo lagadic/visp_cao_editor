@@ -54,34 +54,51 @@ class IgnitProperties(bpy.types.PropertyGroup):
     vp_obj_Point2 = FloatVectorProperty(name = "Point 2 coordinate", description = "Point 2 coordinate", size=3, default=[0.00,0.00,0.00])
     vp_obj_Point3 = FloatVectorProperty(name = "Point 3 coordinate", description = "Point 3 coordinate", size=3, default=[0.00,0.00,0.00])
 
-    vp_radius = FloatProperty(name = "", default = 0,description = "radius")
+    vp_radius = FloatProperty(name = "", default = 0,description = "Set radius")
 
 class UIPanel(bpy.types.Panel):
     bl_label = "ViSP CAD Properites Panel"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
 
+    # @classmethod
+    # def poll(cls, context):
+        # return ()
+
     def draw(self, context):
         layout = self.layout
         scn = context.scene
         col = layout.column()
         col.prop(scn.ignit_panel, "vp_model_types", expand=False)
+        
+        col1 = col.column()
+        col1.enabled = False
 
-        col.prop(scn.ignit_panel, "vp_obj_Point1")
-        col.prop(scn.ignit_panel, "vp_obj_Point2")
-        col.prop(scn.ignit_panel, "vp_obj_Point3")
+        if scn.ignit_panel.vp_model_types in ["3D Cylinders","3D Circles"]:
+            if context.active_object.mode == 'EDIT': # enable only in edit mode
+                col1.enabled = True                
+            else:
+                col.label("Switch to EDIT MODE to set radius and coordinates")
 
-        row = col.row()
-        row.operator("my.button", text="Calculate Radius")
-        row.prop(scn.ignit_panel, "vp_radius")
+            col1.prop(scn.ignit_panel, "vp_obj_Point1")
+            col1.operator("my.button", text="Get Point 1").number=1
+            col1.prop(scn.ignit_panel, "vp_obj_Point2")
+            col1.operator("my.button", text="Get Point 2").number=2
+            if scn.ignit_panel.vp_model_types == "3D Circles":
+                col1.prop(scn.ignit_panel, "vp_obj_Point3")
+                col1.operator("my.button", text="Get Point 3").number=3
+
+            row = col1.row()
+            row.operator("my.button", text="Calculate Radius").number=4
+            row.prop(scn.ignit_panel, "vp_radius")
 
         # col.prop(scn.ignit_panel, "vp_heirarchy_export")
         col.label(" ")
         layout.operator("model_types.selection")
  
-# #####################################################
-# Button to Set Properites
-# #####################################################
+# ##########################################################
+# Buttons to Set Properites, Calculate Radius, Get Vertices
+# ##########################################################
 
 class OBJECT_OT_PrintPropsButton(bpy.types.Operator):
     bl_idname = "model_types.selection"
@@ -91,36 +108,53 @@ class OBJECT_OT_PrintPropsButton(bpy.types.Operator):
         scn = context.scene
         for ob in context.selected_objects:
             ob["vp_model_types"] = scn.ignit_panel.vp_model_types
-            ob["vp_obj_Point1"] = scn.ignit_panel.vp_obj_Point1
-            ob["vp_obj_Point2"] = scn.ignit_panel.vp_obj_Point2
-            ob["vp_obj_Point3"] = scn.ignit_panel.vp_obj_Point3 # Will be ignored for cylinder
-            ob["vp_radius"] = scn.ignit_panel.vp_radius
+
+            if scn.ignit_panel.vp_model_types in ["3D Cylinders","3D Circles"]:
+                ob["vp_obj_Point1"] = scn.ignit_panel.vp_obj_Point1
+                ob["vp_obj_Point2"] = scn.ignit_panel.vp_obj_Point2
+                if scn.ignit_panel.vp_model_types == "3D Circles":
+                    ob["vp_obj_Point3"] = scn.ignit_panel.vp_obj_Point3
+
+                ob["vp_radius"] = scn.ignit_panel.vp_radius
 
         return{'FINISHED'}
 
 class OBJECT_OT_Button(bpy.types.Operator):
     bl_idname = "my.button"
     bl_label = "Button"
- 
+    number = bpy.props.IntProperty()
+
     def execute(self, context):
         scn = context.scene
         for ob in context.selected_objects:
             if scn.ignit_panel.vp_model_types in ["3D Cylinders","3D Circles"]:
-                # Calculate Radius
-                ob_edit = context.edit_object
+                ob_edit = context.edit_object # check if in edit mode
                 me = ob_edit.data
                 bm = bmesh.from_edit_mesh(me)
                 selected = [v for v in bm.verts if v.select]
-                vsum = Vector()
-                for v in selected:
-                    vsum += v.co
-                midPoint = vsum/len(selected)
-                distances = [(v.co-midPoint).length for v in selected]
-                radius = sum(distances)/len(distances)
-                ob["vp_radius"] = radius
-                scn.ignit_panel.vp_radius = radius
-
+                # Calculate Radius
+                if self.number == 4:    
+                    vsum = Vector()
+                    for v in selected:
+                        vsum += v.co
+                    midPoint = vsum/len(selected)
+                    distances = [(v.co-midPoint).length for v in selected]
+                    radius = sum(distances)/len(distances)
+                    ob["vp_radius"] = radius
+                    scn.ignit_panel.vp_radius = radius
+                else: #Get coordinates of selected vertex
+                    for v in selected:
+                        if self.number == 1:
+                            scn.ignit_panel.vp_obj_Point1 = v.co
+                        elif self.number == 2:
+                            scn.ignit_panel.vp_obj_Point2 = v.co
+                        elif self.number == 3:
+                            scn.ignit_panel.vp_obj_Point3 = v.co
+                        print(v.co)
+                        break
+                    break
         return{'FINISHED'} 
+
 
 # #####################################################
 # ExportCAO
