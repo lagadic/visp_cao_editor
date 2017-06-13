@@ -123,7 +123,7 @@ class Uilist_selectAllItems_circle(bpy.types.Operator):
         except IndexError:
             pass
 
-        else:#todo switch to object mode
+        else:
             bpy.ops.object.mode_set(mode='OBJECT')
             self._ob_select = bpy.data.objects[scn.custom_circle[scn.custom_circle_index].name]
             self._ob_select.select = True
@@ -142,7 +142,7 @@ class Uilist_clearAllItems_circle(bpy.types.Operator):
     bl_label = "Clear List"
     bl_description = "Clear all items in the list"
 
-    def execute(self, context):#todo : delete scene elements
+    def execute(self, context):
         scn = context.scene
         lst = scn.custom_circle
         bpy.ops.object.select_all(action='DESELECT')

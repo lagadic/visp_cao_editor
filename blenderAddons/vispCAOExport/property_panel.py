@@ -261,7 +261,7 @@ class OBJECT_OT_Button(bpy.types.Operator):
                 selected = [v for v in bm.verts if v.select]
                 #Get selected vertices
                 if self.number == 6:
-                    #TODO: how to undo/ update points change?
+                    #TODO: update points
                     for v in selected:
                         item = scn.custom_vertices.add()
                         item.id = len(scn.custom_vertices)
