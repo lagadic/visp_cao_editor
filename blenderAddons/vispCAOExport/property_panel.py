@@ -268,14 +268,27 @@ class OBJECT_OT_Button(bpy.types.Operator):
                         item.coord = [round(i,4) for i in v.co]
                         item.name = ",".join(map(str,[x for x in item.coord]))
                         scn.custom_vertices_index = (len(scn.custom_vertices)-1)
-                    bpy.ops.mesh.edge_face_add()    
+
+                    #Separate the vertices to form a new mesh
                     bpy.ops.mesh.separate(type='SELECTED')
-                    shuffle(seed)
-                    scn.objects[0].name += scn.ignit_panel.vp_model_types + "".join(seed)
                     bpy.ops.object.mode_set(mode='OBJECT')
-                    bpy.ops.object.select_all(action='DESELECT')
-                    scn.objects[0].select = True
+                    for obj in scn.objects:
+                        if obj.type == 'MESH' and obj.name == scn.objects[0].name:
+                            scn.objects.active = obj
+                            obj.select = True
+                        else:
+                            obj.select = False
+
                     bpy.ops.object.mode_set(mode='EDIT')
+                    bpy.ops.mesh.select_all(action='TOGGLE')
+                    # Fill missing faces.
+                    bpy.ops.mesh.edge_face_add()
+                    # Apply Limited Dissove to reduce poly count to one.
+                    if len(bpy.context.object.data.polygons) > 1:
+                        bpy.ops.mesh.dissolve_limited()
+
+                    shuffle(seed)
+                    scn.objects[0].name += scn.ignit_panel.vp_model_types + "_" + "".join(seed)
                     new_mesh = scn.objects[0].name
 
                 # Calculate Radius
