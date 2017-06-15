@@ -282,7 +282,10 @@ class OBJECT_OT_Button(bpy.types.Operator):
                     bpy.ops.object.mode_set(mode='EDIT')
                     bpy.ops.mesh.select_all(action='TOGGLE')
                     # Fill missing faces.
-                    bpy.ops.mesh.edge_face_add()
+                    try:
+                        bpy.ops.mesh.edge_face_add()
+                    except:
+                        pass
                     # Apply Limited Dissove to reduce poly count to one.
                     if len(bpy.context.object.data.polygons) > 1:
                         bpy.ops.mesh.dissolve_limited()
