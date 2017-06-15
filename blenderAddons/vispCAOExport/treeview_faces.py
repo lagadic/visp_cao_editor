@@ -6,6 +6,10 @@ from bpy.types import Panel, UIList
 # TreeView 
 # #########################################
 
+def object_deselection():
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='DESELECT')
+
 def get_activeSceneObject():
     return bpy.context.scene.objects.active.name
 
@@ -48,7 +52,7 @@ class Uilist_actions_faces(bpy.types.Operator):
 
             elif self.action == 'REMOVE':
                 info = 'Item %s removed from list' % (scn.custom_faces[scn.custom_faces_index].name)
-                bpy.ops.object.select_all(action='DESELECT')
+                object_deselection()
                 bpy.data.objects[scn.custom_faces[scn.custom_faces_index].name].select = True
                 bpy.ops.object.delete()
                 scn.custom_faces_index -= 1
@@ -115,8 +119,8 @@ class Uilist_selectAllItems_faces(bpy.types.Operator):
 
     def execute(self, context):
         scn = context.scene
-        bpy.ops.object.select_all(action='DESELECT')
         idx = scn.custom_faces_index
+        object_deselection()
 
         try:
             item = scn.custom_faces[idx]
@@ -124,7 +128,6 @@ class Uilist_selectAllItems_faces(bpy.types.Operator):
             pass
 
         else:
-            bpy.ops.object.mode_set(mode='OBJECT')
             self._ob_select = bpy.data.objects[scn.custom_faces[scn.custom_faces_index].name]
             self._ob_select.select = True
             scn.ignit_panel.vp_model_types = self._ob_select["vp_model_types"]
@@ -140,7 +143,7 @@ class Uilist_clearAllItems_faces(bpy.types.Operator):
     def execute(self, context):
         scn = context.scene
         lst = scn.custom_faces
-        bpy.ops.object.select_all(action='DESELECT')
+        object_deselection()
 
         if len(lst) > 0:
             for i in range(len(lst)-1,-1,-1):

@@ -285,6 +285,7 @@ class OBJECT_OT_Button(bpy.types.Operator):
                     try:
                         bpy.ops.mesh.edge_face_add()
                     except:
+                        print("No missing faces detected")
                         pass
                     # Apply Limited Dissove to reduce poly count to one.
                     if len(bpy.context.object.data.polygons) > 1:
