@@ -69,7 +69,7 @@ class Uilist_actions_circle(bpy.types.Operator):
 # #########################################
 # Draw Panels and Button
 # #########################################
-
+#TODO: Add RMB tool
 class UL_items_circle(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):

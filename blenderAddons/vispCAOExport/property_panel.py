@@ -2,6 +2,8 @@ import bpy
 import bmesh
 from random import *
 from bpy.props import *
+import mathutils
+import math
 from mathutils import Vector
 from bpy.types import Panel, UIList
 
@@ -26,9 +28,9 @@ class IgnitProperties(bpy.types.PropertyGroup):
 
     vp_export_enable = BoolProperty(name = "Enable For Export", description = "True or False?", default = True)
 
-    vp_obj_Point1 = FloatVectorProperty(name = "Point 1 coordinate", description = "Point 1 coordinate", size=3, default=[0.00,0.00,0.00])
-    vp_obj_Point2 = FloatVectorProperty(name = "Point 2 coordinate", description = "Point 2 coordinate", size=3, default=[0.00,0.00,0.00])
-    vp_obj_Point3 = FloatVectorProperty(name = "Point 3 coordinate", description = "Point 3 coordinate", size=3, default=[0.00,0.00,0.00])
+    vp_obj_Point1 = FloatVectorProperty(name = "", description = "Point 1 coordinate", size=3, default=[0.00,0.00,0.00])
+    vp_obj_Point2 = FloatVectorProperty(name = "", description = "Point 2 coordinate", size=3, default=[0.00,0.00,0.00])
+    vp_obj_Point3 = FloatVectorProperty(name = "", description = "Point 3 coordinate", size=3, default=[0.00,0.00,0.00])
 
     vp_radius = FloatProperty(name = "", default = 0,description = "Set radius")
 
@@ -62,17 +64,17 @@ class UIPanel(bpy.types.Panel):
 
         if not len(context.selected_objects):
             col.label("Select Object(s) in scene to add properties")
-
+        #TODO: Add Tool Tip to buttons
         else:
             self._ob_select = context.selected_objects[0]
             try:
                 self._ob_select["vp_model_types"]
             except:
                 col.label("Add new property")
-                col.operator("my.button", text="+ New").number=5
+                col.operator("my.button", text="+ New").loc="ADD_NEW"
 
             else:
-                col.operator("refresh.button", text="load previous property") # Load prev. set properties. Button click required to write to panel
+                # col.operator("refresh.button", text="load previous property") # Load prev. set properties. Button click required to write to panel
                 col.prop(scn.ignit_panel, "vp_model_types", expand=False)
                 col1 = col.column()
                 col1.enabled = False
@@ -85,7 +87,7 @@ class UIPanel(bpy.types.Panel):
                         col.label("Note: Only needed if model is complex")
 
                     col1.template_list("UL_items_vertices", "", scn, "custom_vertices", scn, "custom_vertices_index", rows=2)
-                    col1.operator("my.button", text="Get Vertices").number=6
+                    col1.operator("my.button", text="Get Vertices").loc="GET_VERTICES"
                     col1.operator("my.button", text="Clear List").number=7
                     bpy.app.debug = True
 
@@ -95,17 +97,26 @@ class UIPanel(bpy.types.Panel):
                     else:
                         col.label("Switch to EDIT MODE to set radius and coordinates")
 
-                    col1.prop(scn.ignit_panel, "vp_obj_Point1")
-                    col1.operator("my.button", text="Get Point 1").number=1
-                    col1.prop(scn.ignit_panel, "vp_obj_Point2")
-                    col1.operator("my.button", text="Get Point 2").number=2
                     if scn.ignit_panel.vp_model_types == "3D Circles":
+                        col1.label("First point on circumference")
+                        col1.prop(scn.ignit_panel, "vp_obj_Point1")
+                        col1.label("Second point on circumference")
+                        col1.prop(scn.ignit_panel, "vp_obj_Point2")
+                        col1.label("Center point coordinate")
                         col1.prop(scn.ignit_panel, "vp_obj_Point3")
-                        col1.operator("my.button", text="Get Point 3").number=3
 
-                    row = col1.row()
-                    row.operator("my.button", text="Calculate Radius").number=4
-                    row.prop(scn.ignit_panel, "vp_radius")
+                    elif scn.ignit_panel.vp_model_types == "3D Cylinders":
+                        col1.label("First point on revolution axis")
+                        col1.prop(scn.ignit_panel, "vp_obj_Point1")
+                        col1.operator("my.button", text="Update").loc="AXIS1"
+                        col1.label("Second point on revolution axis")
+                        col1.prop(scn.ignit_panel, "vp_obj_Point2")
+                        col1.operator("my.button", text="Update").loc="AXIS2"
+
+                    col1.label("Radius")
+                    col1.prop(scn.ignit_panel, "vp_radius")
+                    col1.operator("my.button", text="Update").loc="CAL_RAD"
+
                 col.prop(scn.ignit_panel, "vp_export_enable")
                 col.label(" ")
                 layout.operator("model_types.selection")
@@ -116,11 +127,29 @@ class UIPanel(bpy.types.Panel):
 
 new_mesh = ""
 seed = ["b","l","e","n","d","r","v","t","i","s","p","a","z","y"]
+
 def clear_vertices_list(scn):
     lst = scn.custom_vertices
     if len(lst) > 0:
         for i in range(len(lst)-1,-1,-1):
             scn.custom_vertices.remove(i)
+
+def get_axis_point(selected):
+    t = selected[1].co - selected[0].co
+    u = selected[2].co - selected[0].co
+    v = selected[2].co - selected[1].co
+    w = mathutils.Vector.cross(t,u)
+    len_w = math.pow(w[2],2) + math.pow(w[1],2) + math.pow(w[0],2)
+    tt = t*t
+    uu = u*u
+    axis_pt = selected[0].co + (u*tt*(u*v) - t*uu*(t*v))*0.5/len_w
+    radius = math.sqrt(tt*uu*(v*v) * 0.25/len_w)
+    return axis_pt, radius
+
+def get_radius(selected):
+    diff = selected[0].co - selected[1].co
+    diameter = math.sqrt(math.pow(diff[0],2) + math.pow(diff[1],2) + math.pow(diff[2],2))
+    return diameter/2
 
 class OBJECT_OT_AddPropsButton(bpy.types.Operator):
     bl_idname = "model_types.selection"
@@ -203,37 +232,11 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
 
         return{'FINISHED'}
 
-class OBJECT_OT_RefreshButton(bpy.types.Operator):
-    bl_idname = "refresh.button"
-    bl_label = "Button"
-
-    def __init__(self):
-        self._ob_select = None
-
-    def execute(self, context):
-        scn = context.scene
-        self._ob_select = context.selected_objects[0]
-        scn.ignit_panel.vp_model_types = self._ob_select["vp_model_types"]
-        scn.ignit_panel.vp_export_enable = self._ob_select["vp_export_enable"]
-        if self._ob_select["vp_model_types"] in ["3D Cylinders","3D Circles"]:
-            try:
-                self._ob_select["vp_obj_Point1"]
-            except:
-                pass
-            else:
-                scn.ignit_panel.vp_obj_Point1 = self._ob_select["vp_obj_Point1"]
-                scn.ignit_panel.vp_obj_Point2 = self._ob_select["vp_obj_Point2"]
-                if self._ob_select["vp_model_types"] == "3D Circles":
-                    scn.ignit_panel.vp_obj_Point3 = self._ob_select["vp_obj_Point3"]
-
-                scn.ignit_panel.vp_radius = self._ob_select["vp_radius"]
-
-        return{'FINISHED'}
-
 class OBJECT_OT_Button(bpy.types.Operator):
     bl_idname = "my.button"
     bl_label = "Button"
     number = bpy.props.IntProperty()
+    loc = bpy.props.StringProperty()
 
     def __init__(self):
         self._ob_select = None
@@ -245,75 +248,100 @@ class OBJECT_OT_Button(bpy.types.Operator):
     def execute(self, context):
         global new_mesh, seed
         scn = context.scene
+        message_cy = "Select 1 point to update axis point;\nSelect 2 points to calculate only radius;\nSelect 3 points to calculate radius and axis point"
+        message_cr = "Select 1 point to update center point;\nSelect 2 points to calculate radius;\nSelect 3 points to calculate radius and center point"
 
         if self.number == 7:
             clear_vertices_list(scn)
 
-        elif self.number == 5:
+        elif self.loc == "ADD_NEW":
             self._ob_select = context.selected_objects[0]
-            self._ob_select["vp_model_types"] = "3D Faces"
+            self._ob_select["vp_model_types"] = "3D Faces"# init
 
         else:
-            for ob in context.selected_objects:
-                ob_edit = context.edit_object # check if in edit mode
-                me = ob_edit.data
-                bm = bmesh.from_edit_mesh(me)
-                selected = [v for v in bm.verts if v.select]
-                #Get selected vertices
-                if self.number == 6:
-                    #TODO: update points
-                    for v in selected:
-                        item = scn.custom_vertices.add()
-                        item.id = len(scn.custom_vertices)
-                        item.coord = [round(i,4) for i in v.co]
-                        item.name = ",".join(map(str,[x for x in item.coord]))
-                        scn.custom_vertices_index = (len(scn.custom_vertices)-1)
+            ob = context.selected_objects[0]
+            ob_edit = context.edit_object # check if in edit mode
+            me = ob_edit.data
+            bm = bmesh.from_edit_mesh(me)
+            selected = [v for v in bm.verts if v.select]
 
-                    #Separate the vertices to form a new mesh
-                    bpy.ops.mesh.separate(type='SELECTED')
-                    bpy.ops.object.mode_set(mode='OBJECT')
-                    for obj in scn.objects:
-                        if obj.type == 'MESH' and obj.name == scn.objects[0].name:
-                            scn.objects.active = obj
-                            obj.select = True
-                        else:
-                            obj.select = False
+            #Get selected vertices
+            if self.loc == "GET_VERTICES":
+                #TODO: update points
+                for v in selected:
+                    item = scn.custom_vertices.add()
+                    item.id = len(scn.custom_vertices)
+                    item.coord = [round(i,4) for i in v.co]
+                    item.name = ",".join(map(str,[x for x in item.coord]))
+                    scn.custom_vertices_index = (len(scn.custom_vertices)-1)
 
-                    bpy.ops.object.mode_set(mode='EDIT')
-                    bpy.ops.mesh.select_all(action='TOGGLE')
-                    # Fill missing faces.
-                    try:
-                        bpy.ops.mesh.edge_face_add()
-                    except:
-                        print("No missing faces detected")
-                        pass
-                    # Apply Limited Dissove to reduce poly count to one.
-                    if len(bpy.context.object.data.polygons) > 1:
-                        bpy.ops.mesh.dissolve_limited()
+                #Separate the vertices to form a new mesh
+                bpy.ops.mesh.separate(type='SELECTED')
+                bpy.ops.object.mode_set(mode='OBJECT')
+                for obj in scn.objects:
+                    if obj.type == 'MESH' and obj.name == scn.objects[0].name:
+                        scn.objects.active = obj
+                        obj.select = True
+                    else:
+                        obj.select = False
 
-                    shuffle(seed)
-                    scn.objects[0].name += scn.ignit_panel.vp_model_types + "_" + "".join(seed)
-                    new_mesh = scn.objects[0].name
+                bpy.ops.object.mode_set(mode='EDIT')
+                bpy.ops.mesh.select_all(action='TOGGLE')
+                # Fill missing faces.
+                try:
+                    bpy.ops.mesh.edge_face_add()
+                except:
+                    print("No missing faces detected")
+                    pass
+                # Apply Limited Dissove to reduce poly count to one.
+                if len(bpy.context.object.data.polygons) > 1:
+                    bpy.ops.mesh.dissolve_limited()
 
-                # Calculate Radius
-                if self.number == 4:    
-                    vsum = Vector()
-                    for v in selected:
-                        vsum += v.co
-                    midPoint = vsum/len(selected)
-                    distances = [(v.co-midPoint).length for v in selected]
-                    radius = sum(distances)/len(distances)
-                    ob["vp_radius"] = radius
-                    scn.ignit_panel.vp_radius = radius
-                #Get coordinates of selected vertex
+                shuffle(seed)
+                scn.objects[0].name += scn.ignit_panel.vp_model_types + "_" + "".join(seed)
+                new_mesh = scn.objects[0].name
+
+            # Calculate/Set Axis Points
+            elif self.loc == "AXIS1":
+                if len(selected) == 1:
+                    scn.ignit_panel.vp_obj_Point1 = selected[0].co
+                elif len(selected) == 3:
+                    scn.ignit_panel.vp_obj_Point1, scn.ignit_panel.vp_radius = get_axis_point(selected)
+                elif len(selected) == 0:
+                    self.report({'ERROR'}, "No points selected!\n" + message_cy)
                 else:
-                    v = selected[0]
-                    if self.number == 1:
-                        scn.ignit_panel.vp_obj_Point1 = v.co
-                    elif self.number == 2:
-                        scn.ignit_panel.vp_obj_Point2 = v.co
-                    elif self.number == 3:
-                        scn.ignit_panel.vp_obj_Point3 = v.co
+                    self.report({'ERROR'}, "Cannot update axis revolution point and radius from 2 or more than 3 points!\n" + message_cy)
+
+            elif self.loc == "AXIS2":
+                if len(selected) == 1:
+                    scn.ignit_panel.vp_obj_Point2 = selected[0].co
+                elif len(selected) == 3:
+                    scn.ignit_panel.vp_obj_Point2, scn.ignit_panel.vp_radius = get_axis_point(selected)
+                elif len(selected) == 0:
+                    self.report({'ERROR'}, "No points selected!\n" + message_cy)
+                else:
+                    self.report({'ERROR'}, "Cannot update axis revolution point and radius from 2 or more than 3 points!\n" + message_cy)
+
+            # Calculate Radius
+            elif self.loc == "CAL_RAD":
+                if scn.ignit_panel.vp_model_types == "3D Circles":
+                    if len(selected) == 1:
+                        scn.ignit_panel.vp_obj_Point3 = selected[0].co
+                    elif len(selected) == 2:
+                        scn.ignit_panel.vp_radius = get_radius(selected)
+                    elif len(selected) == 3:
+                        scn.ignit_panel.vp_obj_Point1 = selected[0].co
+                        scn.ignit_panel.vp_obj_Point2 = selected[1].co
+                        scn.ignit_panel.vp_obj_Point3, scn.ignit_panel.vp_radius = get_axis_point(selected)
+                    else:
+                        self.report({'ERROR'}, "Cannot update circle from 0 or more than 3 points!\n" + message_cr)
+
+                elif scn.ignit_panel.vp_model_types == "3D Cylinders":
+                    if len(selected) == 2:
+                        scn.ignit_panel.vp_radius = get_radius(selected)
+                    else:
+                        self.report({'ERROR'}, "Cannot update radius when the number of selected points differ from 2.")
+
         return{'FINISHED'}
 
 classes = (
@@ -321,7 +349,6 @@ classes = (
     CustomProp_vertices,
     UIPanel,
     OBJECT_OT_Button,
-    OBJECT_OT_RefreshButton,
     OBJECT_OT_AddPropsButton,
     UL_items_vertices
 )

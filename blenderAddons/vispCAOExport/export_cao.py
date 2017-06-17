@@ -208,9 +208,9 @@ def write_file(filepath, objects, scene,
 
         elif ob_main["vp_model_types"] == "3D Circles":
             gcircles.append([ob_main["vp_radius"], len(vertices), len(vertices)+1, len(vertices)+2])
+            vertices.append(ob_main["vp_obj_Point3"])
             vertices.append(ob_main["vp_obj_Point1"])
             vertices.append(ob_main["vp_obj_Point2"])
-            vertices.append(ob_main["vp_obj_Point3"])
             totverts += 3
 
         if ob_main.dupli_type != 'NONE':
