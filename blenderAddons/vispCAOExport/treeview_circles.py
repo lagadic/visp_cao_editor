@@ -7,8 +7,11 @@ from bpy.types import Panel, UIList
 # #########################################
 
 def object_deselection():
-    bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.ops.object.select_all(action='DESELECT')
+    try:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+    except:
+        pass
 
 def get_activeSceneObject():
     return bpy.context.scene.objects.active.name
@@ -54,16 +57,16 @@ class Uilist_actions_circle(bpy.types.Operator):
                 info = 'Item %s removed from list' % (scn.custom_circle[scn.custom_circle_index].name)
                 object_deselection()
                 bpy.data.objects[scn.custom_circle[scn.custom_circle_index].name].select = True
+                scn.objects.active = bpy.data.objects[scn.custom_circle[scn.custom_circle_index].name]
                 bpy.ops.object.delete()
                 scn.custom_circle_index -= 1
                 self.report({'INFO'}, info)
                 scn.custom_circle.remove(idx)
+
             elif self.action == 'DISABLE':
-                for i in range(0,idx+1):
-                    scn.custom_circle[i].enabled = False
+                scn.custom_circle[scn.custom_circle_index].enabled = False
             elif self.action == 'ENABLE':
-                for i in range(0,idx+1):
-                    scn.custom_circle[i].enabled = True
+                scn.custom_circle[scn.custom_circle_index].enabled = True
         return {"FINISHED"}
 
 # #########################################
@@ -73,7 +76,7 @@ class Uilist_actions_circle(bpy.types.Operator):
 class UL_items_circle(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(0.3)
+        split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=True, icon='BORDER_RECT')
 
@@ -91,19 +94,18 @@ class UIListPanelExample_circle(Panel):
         layout = self.layout
         scn = bpy.context.scene
 
-        rows = 2
+        rows = 5
         row = layout.row()
         row.template_list("UL_items_circle", "", scn, "custom_circle", scn, "custom_circle_index", rows=rows)
 
         col = row.column(align=True)
-        col.operator("customcircle.list_action", icon='ZOOMOUT', text="").action = 'REMOVE'
-        col.separator()
         col.operator("customcircle.list_action", icon='TRIA_UP', text="").action = 'UP'
         col.operator("customcircle.select_item", icon="UV_SYNC_SELECT")
         col.operator("customcircle.list_action", icon='TRIA_DOWN', text="").action = 'DOWN'
         col.separator()
-        col.operator("customcircle.list_action", icon='VISIBLE_IPO_ON', text="Enable All").action = 'ENABLE'
-        col.operator("customcircle.list_action", icon='VISIBLE_IPO_OFF', text="Disable All").action = 'DISABLE'
+        col.operator("customcircle.list_action", icon='ZOOMOUT', text="").action = 'REMOVE'
+        col.operator("customcircle.list_action", icon='VISIBLE_IPO_ON', text="").action = 'ENABLE'
+        col.operator("customcircle.list_action", icon='VISIBLE_IPO_OFF', text="").action = 'DISABLE'
 
         row = layout.row()
         col = row.column(align=True)
@@ -111,8 +113,8 @@ class UIListPanelExample_circle(Panel):
 
 class Uilist_selectAllItems_circle(bpy.types.Operator):
     bl_idname = "customcircle.select_item"
-    bl_label = "Select List Item"
-    bl_description = "Select Item in scene"
+    bl_label = ""
+    bl_description = "Edit Primitive"
 
     def __init__(self):
         self._ob_select = None
@@ -129,6 +131,7 @@ class Uilist_selectAllItems_circle(bpy.types.Operator):
 
         else:
             self._ob_select = bpy.data.objects[scn.custom_circle[scn.custom_circle_index].name]
+            scn.objects.active = self._ob_select
             self._ob_select.select = True
             scn.ignit_panel.vp_model_types = self._ob_select["vp_model_types"]
 

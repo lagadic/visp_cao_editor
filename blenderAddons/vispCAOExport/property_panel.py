@@ -202,8 +202,8 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
 
             if hasCircle and hasCylinder:
                 shuffle(seed)
-                me = bpy.data.meshes.new(scn.ignit_panel.vp_model_types+"".join(seed))
-                ob = bpy.data.objects.new(scn.ignit_panel.vp_model_types+"".join(seed), me)
+                me = bpy.data.meshes.new(scn.ignit_panel.vp_model_types + "_" + "".join(seed))
+                ob = bpy.data.objects.new(scn.ignit_panel.vp_model_types + "_" + "".join(seed), me)
                 scn.objects.link(ob)
                 # scn.objects.active = ob
                 # ob.select = True
