@@ -154,9 +154,9 @@ class Uilist_clearAllItems_circle(bpy.types.Operator):
 
         if len(lst) > 0:
             for i in range(len(lst)-1,-1,-1):
-                bpy.data.objects[scn.custom_circle[i].name].select = True
+                # bpy.data.objects[scn.custom_circle[i].name].select = True
+                # bpy.ops.object.delete()
                 scn.custom_circle.remove(i)
-                bpy.ops.object.delete()
 
             self.report({'INFO'}, "All items removed")
 

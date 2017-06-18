@@ -153,8 +153,8 @@ class Uilist_clearAllItems_cylinder(bpy.types.Operator):
 
         if len(lst) > 0:
             for i in range(len(lst)-1,-1,-1):
-                bpy.data.objects[scn.custom_cylinder[i].name].select = True
-                bpy.ops.object.delete()
+                # bpy.data.objects[scn.custom_cylinder[i].name].select = True
+                # bpy.ops.object.delete()
                 scn.custom_cylinder.remove(i)
             self.report({'INFO'}, "All items removed")
 

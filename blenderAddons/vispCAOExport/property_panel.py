@@ -114,7 +114,8 @@ class UIPanel(bpy.types.Panel):
                     col1.label("Radius")
                     col1.prop(scn.ignit_panel, "vp_radius")
                     col1.operator("my.button", text="Update").loc="CAL_RAD"
-
+                    col1.label("")
+                    col1.operator("my.button", text="Clear Values").loc="CLEAR_VAL"
                 col.label(" ")
                 layout.operator("model_types.selection")
  
@@ -251,6 +252,13 @@ class OBJECT_OT_Button(bpy.types.Operator):
         elif self.loc == "ADD_NEW":
             self._ob_select = context.selected_objects[0]
             self._ob_select["vp_model_types"] = "3D Faces"# init
+
+        elif self.loc == "CLEAR_VAL":
+            scn.ignit_panel.vp_obj_Point1 = [0.00,0.00,0.00]
+            scn.ignit_panel.vp_obj_Point2 = [0.00,0.00,0.00]
+            scn.ignit_panel.vp_radius = 0.00
+            if scn.ignit_panel.vp_model_types == "3D Circles":
+                scn.ignit_panel.vp_obj_Point3 = [0.00,0.00,0.00]
 
         else:
             ob = context.selected_objects[0]
