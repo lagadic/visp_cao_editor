@@ -26,8 +26,6 @@ class IgnitProperties(bpy.types.PropertyGroup):
         update=update_after_enum
         )
 
-    vp_export_enable = BoolProperty(name = "Enable For Export", description = "True or False?", default = True)
-
     vp_obj_Point1 = FloatVectorProperty(name = "", description = "Point 1 coordinate", size=3, default=[0.00,0.00,0.00])
     vp_obj_Point2 = FloatVectorProperty(name = "", description = "Point 2 coordinate", size=3, default=[0.00,0.00,0.00])
     vp_obj_Point3 = FloatVectorProperty(name = "", description = "Point 3 coordinate", size=3, default=[0.00,0.00,0.00])
@@ -117,7 +115,6 @@ class UIPanel(bpy.types.Panel):
                     col1.prop(scn.ignit_panel, "vp_radius")
                     col1.operator("my.button", text="Update").loc="CAL_RAD"
 
-                col.prop(scn.ignit_panel, "vp_export_enable")
                 col.label(" ")
                 layout.operator("model_types.selection")
  
@@ -164,7 +161,6 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
 
         if scn.ignit_panel.vp_model_types == "3D Faces":
             ob["vp_model_types"] = scn.ignit_panel.vp_model_types
-            ob["vp_export_enable"] = scn.ignit_panel.vp_export_enable
             attr=(o.name for o in scn.custom_faces)
             if ob.name not in attr:
                 item = scn.custom_faces.add()
@@ -174,12 +170,11 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
                 else:
                     item.name = ob.name
                 scn.custom_faces_index = (len(scn.custom_faces)-1)
-            scn.custom_faces[scn.custom_faces_index].enabled = ob["vp_export_enable"]
+            scn.custom_faces[scn.custom_faces_index].enabled = True
             clear_vertices_list(scn)
 
         elif scn.ignit_panel.vp_model_types == "3D Lines":
             ob["vp_model_types"] = scn.ignit_panel.vp_model_types
-            ob["vp_export_enable"] = scn.ignit_panel.vp_export_enable
             attr=(o.name for o in scn.custom_lines)
             if ob.name not in attr:
                 item = scn.custom_lines.add()
@@ -189,7 +184,7 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
                 else:
                     item.name = ob.name
                 scn.custom_lines_index = (len(scn.custom_lines)-1)
-            scn.custom_lines[scn.custom_lines_index].enabled = ob["vp_export_enable"]
+            scn.custom_lines[scn.custom_lines_index].enabled = True
             clear_vertices_list(scn)
 
         elif scn.ignit_panel.vp_model_types in ["3D Cylinders","3D Circles"]:
@@ -209,7 +204,6 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
                 # ob.select = True
 
             ob["vp_model_types"] = scn.ignit_panel.vp_model_types
-            ob["vp_export_enable"] = scn.ignit_panel.vp_export_enable
             ob["vp_obj_Point1"] = scn.ignit_panel.vp_obj_Point1
             ob["vp_obj_Point2"] = scn.ignit_panel.vp_obj_Point2
             ob["vp_radius"] = scn.ignit_panel.vp_radius
@@ -221,14 +215,14 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
                     item.id = len(scn.custom_circle)
                     scn.custom_circle_index = (len(scn.custom_circle)-1)
                     item.name = ob.name
-                scn.custom_circle[scn.custom_circle_index].enabled = ob["vp_export_enable"]
+                scn.custom_circle[scn.custom_circle_index].enabled = True
             else:
                 if hasCylinder:
                     item = scn.custom_cylinder.add()
                     item.id = len(scn.custom_cylinder)
                     scn.custom_cylinder_index = (len(scn.custom_cylinder)-1)
                     item.name = ob.name
-                scn.custom_cylinder[scn.custom_cylinder_index].enabled = ob["vp_export_enable"]
+                scn.custom_cylinder[scn.custom_cylinder_index].enabled = True
 
         return{'FINISHED'}
 

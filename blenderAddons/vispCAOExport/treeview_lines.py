@@ -56,9 +56,9 @@ class Uilist_actions_lines(bpy.types.Operator):
             elif self.action == 'REMOVE':
                 info = 'Item %s removed from list' % (scn.custom_lines[scn.custom_lines_index].name)
                 object_deselection()
-                bpy.data.objects[scn.custom_lines[scn.custom_lines_index].name].select = True
-                scn.objects.active = bpy.data.objects[scn.custom_lines[scn.custom_lines_index].name]
-                bpy.ops.object.delete()
+                # bpy.data.objects[scn.custom_lines[scn.custom_lines_index].name].select = True
+                # scn.objects.active = bpy.data.objects[scn.custom_lines[scn.custom_lines_index].name]
+                # bpy.ops.object.delete()
                 scn.custom_lines_index -= 1
                 self.report({'INFO'}, info)
                 scn.custom_lines.remove(idx)
@@ -75,7 +75,7 @@ class Uilist_actions_lines(bpy.types.Operator):
 class UL_items_lines(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(0.3)
+        split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=True, icon='BORDER_RECT')
 
@@ -133,7 +133,6 @@ class Uilist_selectAllItems_lines(bpy.types.Operator):
             scn.objects.active = self._ob_select
             self._ob_select.select = True
             scn.ignit_panel.vp_model_types = self._ob_select["vp_model_types"]
-            scn.ignit_panel.vp_export_enable = self._ob_select["vp_export_enable"]
 
         return{'FINISHED'}
 
@@ -164,7 +163,6 @@ class CustomProp_lines(bpy.types.PropertyGroup):
     '''name = StringProperty() '''
     id = IntProperty()
     enabled = bpy.props.BoolProperty()
-    global_enable = bpy.props.BoolProperty(name = "Enable For Export", description = "True or False?", default = True)
 
 # #########################################
 # Register

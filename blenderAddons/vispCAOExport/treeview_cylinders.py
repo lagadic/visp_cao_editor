@@ -56,9 +56,9 @@ class Uilist_actions_cylinder(bpy.types.Operator):
             elif self.action == 'REMOVE':
                 info = 'Item %s removed from list' % (scn.custom_cylinder[scn.custom_cylinder_index].name)
                 object_deselection()
-                bpy.data.objects[scn.custom_cylinder[scn.custom_cylinder_index].name].select = True
-                scn.objects.active = bpy.data.objects[scn.custom_cylinder[scn.custom_cylinder_index].name]
-                bpy.ops.object.delete()
+                # bpy.data.objects[scn.custom_cylinder[scn.custom_cylinder_index].name].select = True
+                # scn.objects.active = bpy.data.objects[scn.custom_cylinder[scn.custom_cylinder_index].name]
+                # bpy.ops.object.delete()
                 scn.custom_cylinder_index -= 1
                 self.report({'INFO'}, info)
                 scn.custom_cylinder.remove(idx)
@@ -75,7 +75,7 @@ class Uilist_actions_cylinder(bpy.types.Operator):
 class UL_items_cylinder(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(0.3)
+        split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=False, icon='BORDER_RECT')
 
@@ -137,7 +137,6 @@ class Uilist_selectAllItems_cylinder(bpy.types.Operator):
             scn.ignit_panel.vp_obj_Point1 = self._ob_select["vp_obj_Point1"]
             scn.ignit_panel.vp_obj_Point2 = self._ob_select["vp_obj_Point2"]
             scn.ignit_panel.vp_radius = self._ob_select["vp_radius"]
-            scn.ignit_panel.vp_export_enable = self._ob_select["vp_export_enable"]
 
         return{'FINISHED'}
 
@@ -168,7 +167,6 @@ class CustomProp_cylinder(bpy.types.PropertyGroup):
     '''name = StringProperty() '''
     id = IntProperty()
     enabled = bpy.props.BoolProperty()
-    global_enable = bpy.props.BoolProperty(name = "Enable For Export", description = "True or False?", default = True)
 
 # #########################################
 # Register

@@ -194,6 +194,11 @@ def write_file(filepath, objects, scene,
                 else:
                     faces.append(f_side)
 
+            # If no faces are present but only lines
+            if len(face_index_pairs) == 0 and ob_main["vp_model_types"] == "3D Lines":
+                for key in me.edge_keys:
+                    lines.append([key[0],key[1]])
+
             # Make the indices global rather then per mesh
             totverts += len(me_verts)
 

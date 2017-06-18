@@ -135,8 +135,11 @@ class ExportCAO(bpy.types.Operator, ExportHelper):
                                          ).to_4x4())
         keywords["global_matrix"] = global_matrix
 
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.select_all(action='DESELECT')
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.select_all(action='DESELECT')
+        except:
+            pass
 
         print("Exporting Objects:")
         for mlist in scn.custom_faces, scn.custom_lines, scn.custom_cylinder, scn.custom_circle:
