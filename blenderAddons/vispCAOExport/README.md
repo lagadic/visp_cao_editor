@@ -8,13 +8,13 @@ This Addon was tested with:
 ## Installation:
 
   1. Run `python build.py` in project directory. `visp_cao_export.zip` file will be created.
-  2. Launch Blender and open `File > User Preferences`
+  2. Launch Blender and open `File > User Preferences`.
     - (**Ctrl+Atl+U**) under Linux
     - (**Cmd+,**) under OSX
   3. Click on `Install from File...` and navigate to the above project directory and select the zip file.
-  4. Search for `visp` in Add-ons section and enable the plugin called "Export: ViSP CAO".
-  5. Click on `Save User Settings` and close `Blender User Preferences` pannel
-  6. On the left side of Blender, there should be a new tab named `Misc` located under the `Tools`, `Create`,... tabs 
+  4. Search for "*visp*"" in Add-ons section and enable the plugin called "*Export: ViSP CAO*".
+  5. Click on `Save User Settings` and close `Blender User Preferences` pannel.
+  6. On the left side of Blender, there should be a new tab named `Misc` located under the `Tools`, `Create`,... tabs.
 
 **Usage**
 
@@ -26,3 +26,8 @@ This Addon was tested with:
 
   2. To set these properties for the selected model(s), hit `Set Properties`.
   3. Go to `File > Export > ViSP .cao` to export to .cao format.
+
+## Uninstall:
+
+  1. Open `File > User Preferences` and search for "*visp*"" in Add-ons search section. 
+  2. Click on the triangle next to "*Export: ViSP CAO*" to expand the section and then click on `Remove`.
