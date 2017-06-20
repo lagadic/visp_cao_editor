@@ -141,7 +141,7 @@ class ExportCAO(bpy.types.Operator, ExportHelper):
         except:
             pass
 
-        print("Exporting Objects:")
+        print("Exporting Objects:")#TODO: hierarchical model export
         for mlist in scn.custom_faces, scn.custom_lines, scn.custom_cylinder, scn.custom_circle:
             for item in mlist: 
                 if item.enabled:

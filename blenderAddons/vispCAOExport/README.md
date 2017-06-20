@@ -2,18 +2,19 @@
 
 This Addon was tested with:
 - Blender 2.78 on Ubuntu 16.04 (manual installation)
-- Blender 2.76 on Ubuntu 16.04 (using apt-get install blender)
+- Blender 2.76 on Ubuntu 16.04 and 14.04 (using apt-get install blender)
 - Blender 2.78 on OSX.
 
-**Installation**:
+## Installation:
 
-  1. Run `blender --background --python setup.py` in project directory.
+  1. Run `python build.py` in project directory. `visp_cao_export.zip` file will be created.
   2. Launch Blender and open `File > User Preferences`
     - (**Ctrl+Atl+U**) under Linux
     - (**Cmd+,**) under OSX
-  3. Search for `visp` in Add-ons section and enable the plugin called "Export: ViSP CAO".
-  4. Click on `Save User Settings` and close `Blender User Preferences` pannel
-  5. On the left side of Blender, there should be a new tab named `Misc` located under the `Tools`, `Create`,... tabs  
+  3. Click on `Install from File...` and navigate to the above project directory and select the zip file.
+  4. Search for `visp` in Add-ons section and enable the plugin called "Export: ViSP CAO".
+  5. Click on `Save User Settings` and close `Blender User Preferences` pannel
+  6. On the left side of Blender, there should be a new tab named `Misc` located under the `Tools`, `Create`,... tabs 
 
 **Usage**
 

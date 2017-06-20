@@ -56,7 +56,7 @@ class Uilist_actions_circle(bpy.types.Operator):
             elif self.action == 'REMOVE':
                 info = 'Item %s removed from list' % (scn.custom_circle[scn.custom_circle_index].name)
                 object_deselection()
-                # bpy.data.objects[scn.custom_circle[scn.custom_circle_index].name].select = True #TODO: Delete object last
+                # bpy.data.objects[scn.custom_circle[scn.custom_circle_index].name].select = True
                 # scn.objects.active = bpy.data.objects[scn.custom_circle[scn.custom_circle_index].name]
                 # bpy.ops.object.delete()
                 scn.custom_circle_index -= 1
@@ -72,7 +72,7 @@ class Uilist_actions_circle(bpy.types.Operator):
 # #########################################
 # Draw Panels and Button
 # #########################################
-#TODO: Add RMB tool
+#TODO: Add RMB tool, primitive names
 class UL_items_circle(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):

@@ -62,7 +62,7 @@ class UIPanel(bpy.types.Panel):
 
         if not len(context.selected_objects):
             col.label("Select Object(s) in scene to add properties")
-        #TODO: Add Tool Tip to buttons
+        #TODO: Add Tool Tip to buttons, set the LOD properties
         else:
             self._ob_select = context.selected_objects[0]
             try:
