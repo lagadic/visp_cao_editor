@@ -30,13 +30,20 @@ the user will fill in the primitve details while the treeview panel is where the
 
 * If `Type == "3D Faces" || "3D Lines"`, for already simplified models i.e every vertex and edge is to be included for export, click on `Add Properties`. The added primitive will show up in the respective treeview.
 
+
+    [3D Faces Demo GIF](https://user-images.githubusercontent.com/11690674/27374715-7f85c152-5675-11e7-94d4-0a4591192a3b.gif)
+    [3D Lines Demo GIF](https://user-images.githubusercontent.com/11690674/27374720-81d4e410-5675-11e7-883e-762bfc0f2f36.gif)
+
 * If `Type == "3D Cylinders"`:
     * Switch to `Edit Mode` to fill in three details, two axis of revolution points and the radius.
     * To get axis of revolution coordinate from the model:
         * Either choose the vertex from the model and click on `Update` or;
         * Choose three points on the circumference of one face of the cylinder and click on `Update`. The axis of revolution of this face and the radius will be calculated and filled in the respective fields.
+        [3D Cylinder Demo GIF 1](https://user-images.githubusercontent.com/11690674/27380499-0d018996-5688-11e7-96f7-60947528495d.gif)
     * To get radius of a face:
         * Choose two diametrically opposite points on the circumference and click on `Update`.
+        [3D Cylinder Demo GIF 2](https://user-images.githubusercontent.com/11690674/27380505-0f02a996-5688-11e7-9996-e8101ec771b3.gif)
+
     * Finally click on `Add Properties`.
 
 * If `Type == "3D Circles"`:
