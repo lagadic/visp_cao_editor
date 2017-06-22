@@ -84,9 +84,12 @@ class UIPanel(bpy.types.Panel):
                         col.label("Switch to EDIT MODE to get coordinates")
                         col.label("Note: Only needed if model is complex")
 
+                    # col1.label("")
                     col1.template_list("UL_items_vertices", "", scn, "custom_vertices", scn, "custom_vertices_index", rows=2)
-                    col1.operator("my.button", text="Get Vertices").loc="GET_VERTICES"
-                    col1.operator("my.button", text="Clear List").number=7
+                    row1 = col1.row()
+                    row1.operator("my.button", text="Reduce Polycount").loc="LIM_DIS"
+                    row1.operator("my.button", text="Get Vertices").loc="GET_VERTICES"
+                    row1.operator("my.button", text="Clear List").number=7
                     bpy.app.debug = True
 
                 elif scn.ignit_panel.vp_model_types in ["3D Cylinders","3D Circles"]:
@@ -259,6 +262,9 @@ class OBJECT_OT_Button(bpy.types.Operator):
             scn.ignit_panel.vp_radius = 0.00
             if scn.ignit_panel.vp_model_types == "3D Circles":
                 scn.ignit_panel.vp_obj_Point3 = [0.00,0.00,0.00]
+
+        elif self.loc == "LIM_DIS":
+            bpy.ops.mesh.dissolve_limited()
 
         else:
             ob = context.selected_objects[0]

@@ -32,6 +32,7 @@ the user will fill in the primitve details while the treeview panel is where the
 
 
     [3D Faces Demo GIF](https://user-images.githubusercontent.com/11690674/27374715-7f85c152-5675-11e7-94d4-0a4591192a3b.gif)
+
     [3D Lines Demo GIF](https://user-images.githubusercontent.com/11690674/27374720-81d4e410-5675-11e7-883e-762bfc0f2f36.gif)
 
 * If `Type == "3D Cylinders"`:
@@ -39,9 +40,11 @@ the user will fill in the primitve details while the treeview panel is where the
     * To get axis of revolution coordinate from the model:
         * Either choose the vertex from the model and click on `Update` or;
         * Choose three points on the circumference of one face of the cylinder and click on `Update`. The axis of revolution of this face and the radius will be calculated and filled in the respective fields.
+
         [3D Cylinder Demo GIF 1](https://user-images.githubusercontent.com/11690674/27380499-0d018996-5688-11e7-96f7-60947528495d.gif)
     * To get radius of a face:
         * Choose two diametrically opposite points on the circumference and click on `Update`.
+        
         [3D Cylinder Demo GIF 2](https://user-images.githubusercontent.com/11690674/27380505-0f02a996-5688-11e7-9996-e8101ec771b3.gif)
 
     * Finally click on `Add Properties`.
@@ -53,14 +56,16 @@ the user will fill in the primitve details while the treeview panel is where the
         * Choose three points on the circumference and hit `Update`. The center and radius will be calculated and the other two points will be filled in from the selected points.
     * To get only radius:
         * Choose two diametrically opposite points on the circumference and click on `Update`.
-  [The below gif contains a demo]
 
 * When choosing `3D Faces` or `3D Lines` for complex models:
-  * First simplify the model such that only object contours are present and poly count is reduced. Then follow the above steps. [tutorial link]
+  * First simplify the model such that only object contours are present and poly count is reduced. Then follow the above steps.
   * Or choose the vertices from the complex model needed:
     * Switch to `Edit Mode` and select the necessary vertices for a face from the model and hit `Get Vertices`.
       This will create a new mesh containing the selected vertices and assign a face to it. If polycount is more than one, then `Limited Dissolve` is applied to simplify further.
     * The above step is automated, thus after clicking on `Get vertices`, hit `Add Properties` to assign it to either `3D faces` or `3D Lines`.
+
+  #### Tutorial:
+  [![screenshot from 2017-06-22 16 06 05](https://user-images.githubusercontent.com/11690674/27435385-bfc89d6c-5764-11e7-86c7-ec281f981603.png)](https://youtu.be/jeihOFwtSoI)
 
 ### TreeView Management
 
@@ -76,3 +81,4 @@ the user will fill in the primitve details while the treeview panel is where the
 
   1. Open `File > User Preferences` and search for "*visp*"" in Add-ons search section. 
   2. Click on the triangle next to "*Export: ViSP CAO*" to expand the section and then click on `Remove`.
+  
