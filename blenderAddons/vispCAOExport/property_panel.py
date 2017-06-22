@@ -26,6 +26,8 @@ class IgnitProperties(bpy.types.PropertyGroup):
         update=update_after_enum
         )
 
+    vp_line_face = BoolProperty(name = "Enable Face Export", description = "True or False?", default=True)
+
     vp_obj_Point1 = FloatVectorProperty(name = "", description = "Point 1 coordinate", size=3, default=[0.00,0.00,0.00])
     vp_obj_Point2 = FloatVectorProperty(name = "", description = "Point 2 coordinate", size=3, default=[0.00,0.00,0.00])
     vp_obj_Point3 = FloatVectorProperty(name = "", description = "Point 3 coordinate", size=3, default=[0.00,0.00,0.00])
@@ -90,6 +92,8 @@ class UIPanel(bpy.types.Panel):
                     row1.operator("my.button", text="Reduce Polycount").loc="LIM_DIS"
                     row1.operator("my.button", text="Get Vertices").loc="GET_VERTICES"
                     row1.operator("my.button", text="Clear List").number=7
+                    if scn.ignit_panel.vp_model_types == "3D Lines":
+                        col.prop(scn.ignit_panel, "vp_line_face")
                     bpy.app.debug = True
 
                 elif scn.ignit_panel.vp_model_types in ["3D Cylinders","3D Circles"]:
@@ -179,6 +183,7 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
 
         elif scn.ignit_panel.vp_model_types == "3D Lines":
             ob["vp_model_types"] = scn.ignit_panel.vp_model_types
+            ob["vp_line_face"] = scn.ignit_panel.vp_line_face
             attr=(o.name for o in scn.custom_lines)
             if ob.name not in attr:
                 item = scn.custom_lines.add()

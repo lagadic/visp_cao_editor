@@ -19,7 +19,7 @@ This Addon was tested with:
 ## Usage:
 
 - The Addon consists of a Property panel and a treeview panel. The Property panel, named ViSP CAD Properties Panel, is where
-the user will fill in the primitve details while the treeview panel is where the user will manage (enable, disable, delete) the different primitives(3D Face, 3D Line, 3D Cylinder, 3D Circle).
+the user will fill in the primitve details while the treeview panel is where the user will manage (enable, disable, delete) the different primitives (3D Face, 3D Line, 3D Cylinder, 3D Circle).
 
 ### Property panel
 

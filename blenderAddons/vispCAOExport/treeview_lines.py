@@ -133,7 +133,7 @@ class Uilist_selectAllItems_lines(bpy.types.Operator):
             scn.objects.active = self._ob_select
             self._ob_select.select = True
             scn.ignit_panel.vp_model_types = self._ob_select["vp_model_types"]
-
+            scn.ignit_panel.vp_line_face = self._ob_select["vp_line_face"]
         return{'FINISHED'}
 
 class Uilist_clearAllItems_lines(bpy.types.Operator):

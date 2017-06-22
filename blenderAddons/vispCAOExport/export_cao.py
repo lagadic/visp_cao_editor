@@ -16,8 +16,8 @@ import bpy_extras.io_utils
 TEMPLATE_CAO_FILE = u"""\
 {
 V1,
-%(nPoints)d,
 # 3D points,
+%(nPoints)d,
 [%(points)s],
 # 3D lines,
 %(nLines)d,
@@ -186,10 +186,10 @@ def write_file(filepath, objects, scene,
                 if ob_main["vp_model_types"] == "3D Lines":
                     initialen = len(lines)
                     for i in range(0,len(f_side)-1):
-                        lines.append([f_side[i]-1,f_side[i+1]-1])
+                        lines.append([f_side[i]-1,f_side[i+1]-1])# TODO: Remove duplicates
                     lines.append([f_side[len(f_side)-1]-1,f_side[0]-1])
-
-                    facelines.append([len(lines)-initialen, list(range(initialen, len(lines)))])
+                    if ob_main["vp_line_face"]:
+                        facelines.append([len(lines)-initialen, list(range(initialen, len(lines)))])
 
                 else:
                     faces.append(f_side)
