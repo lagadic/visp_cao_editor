@@ -19,7 +19,7 @@ This Addon was tested with:
 ## Usage:
 
 - The Addon consists of a Property panel and a treeview panel. The Property panel, named ViSP CAD Properties Panel, is where
-the user will fill in the primitve details while the treeview panel is where the user will manage(enable, disable, delete) the different primitives(3D Face, 3D Line, 3D Cylinder, 3D Circle).
+the user will fill in the primitve details while the treeview panel is where the user will manage (enable, disable, delete) the different primitives(3D Face, 3D Line, 3D Cylinder, 3D Circle).
 
 ### Property panel
 
@@ -36,9 +36,9 @@ the user will fill in the primitve details while the treeview panel is where the
 
 * If `Type == "3D Cylinders"`:
     * Switch to `Edit Mode` to fill in three details, two axis of revolution points and the radius.
-    * To get axis of revolution coordinate from the model:
+    * To get axis of revolution coordinates from the model:
         * Either choose the vertex from the model and click on `Update` or;
-        * Choose three points on the circumference of one face of the cylinder and click on `Update`. The axis of revolution of this face and the radius will be calculated and filled in the respective fields.
+        * Choose three points on the circumference of one circle that corresponds to one face of the cylinder and click on `Update`. The axis of revolution of this face and the radius will be calculated and filled in the respective fields.
         [3D Cylinder Demo GIF 1](https://user-images.githubusercontent.com/11690674/27380499-0d018996-5688-11e7-96f7-60947528495d.gif)
     * To get radius of a face:
         * Choose two diametrically opposite points on the circumference and click on `Update`.
@@ -74,5 +74,5 @@ the user will fill in the primitve details while the treeview panel is where the
 
 ## Uninstall:
 
-  1. Open `File > User Preferences` and search for "*visp*"" in Add-ons search section. 
+  1. Open `File > User Preferences` and search for "*visp*"" in Add-ons search section.
   2. Click on the triangle next to "*Export: ViSP CAO*" to expand the section and then click on `Remove`.
