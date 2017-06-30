@@ -71,16 +71,41 @@ class Uilist_actions_faces(bpy.types.Operator):
 # #########################################
 # Draw Panels and Button
 # #########################################
+ob_index = -1
+ob_select = None
+
+def primitive_name_update(self, context):
+    global ob_select
+    scn = context.scene
+    idx = scn.custom_faces_index
+    try:
+        bpy.data.objects[ob_select].name = scn.custom_faces[idx].name
+        ob_select = scn.custom_faces[idx].name
+    except:
+        pass
 
 class UL_items_faces(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        global ob_select, ob_index
+        scn = context.scene
+        idx = scn.custom_faces_index
+        try:
+            item = scn.custom_faces[idx]
+        except IndexError:
+            pass
+
+        else:
+            if ob_index != idx:
+                ob_index = idx
+                ob_select = scn.custom_faces[idx].name
+
         split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=True, icon='BORDER_RECT')
 
     def invoke(self, context, event):
-        pass   
+        pass
 
 class UIListPanelExample_faces(Panel):
     """Creates a Panel in the Object properties window"""
@@ -160,8 +185,7 @@ class Uilist_clearAllItems_faces(bpy.types.Operator):
         return{'FINISHED'}
 
 class CustomProp_faces(bpy.types.PropertyGroup):
-    '''name = StringProperty() '''
-    id = IntProperty()
+    name = bpy.props.StringProperty(update=primitive_name_update)
     enabled = bpy.props.BoolProperty()
 
 # #########################################

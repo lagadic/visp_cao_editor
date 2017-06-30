@@ -56,9 +56,6 @@ class Uilist_actions_lines(bpy.types.Operator):
             elif self.action == 'REMOVE':
                 info = 'Item %s removed from list' % (scn.custom_lines[scn.custom_lines_index].name)
                 object_deselection()
-                # bpy.data.objects[scn.custom_lines[scn.custom_lines_index].name].select = True
-                # scn.objects.active = bpy.data.objects[scn.custom_lines[scn.custom_lines_index].name]
-                # bpy.ops.object.delete()
                 scn.custom_lines_index -= 1
                 self.report({'INFO'}, info)
                 scn.custom_lines.remove(idx)
@@ -71,10 +68,35 @@ class Uilist_actions_lines(bpy.types.Operator):
 # #########################################
 # Draw Panels and Button
 # #########################################
+ob_index = -1
+ob_select = None
+
+def primitive_name_update(self, context):
+    global ob_select
+    scn = context.scene
+    idx = scn.custom_lines_index
+    try:
+        bpy.data.objects[ob_select].name = scn.custom_lines[idx].name
+        ob_select = scn.custom_lines[idx].name
+    except:
+        pass
 
 class UL_items_lines(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        global ob_select, ob_index
+        scn = context.scene
+        idx = scn.custom_lines_index
+        try:
+            item = scn.custom_lines[idx]
+        except IndexError:
+            pass
+
+        else:
+            if ob_index != idx:
+                ob_index = idx
+                ob_select = scn.custom_lines[idx].name
+
         split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=True, icon='BORDER_RECT')
@@ -148,8 +170,6 @@ class Uilist_clearAllItems_lines(bpy.types.Operator):
 
         if len(lst) > 0:
             for i in range(len(lst)-1,-1,-1):
-                # bpy.data.objects[scn.custom_lines[i].name].select = True
-                # bpy.ops.object.delete()
                 scn.custom_lines.remove(i)
 
             self.report({'INFO'}, "All items removed")
@@ -160,8 +180,7 @@ class Uilist_clearAllItems_lines(bpy.types.Operator):
         return{'FINISHED'}
 
 class CustomProp_lines(bpy.types.PropertyGroup):
-    '''name = StringProperty() '''
-    id = IntProperty()
+    name = bpy.props.StringProperty(update=primitive_name_update)
     enabled = bpy.props.BoolProperty()
 
 # #########################################
