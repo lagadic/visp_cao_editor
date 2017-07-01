@@ -140,19 +140,19 @@ def clear_vertices_list(scn):
             scn.custom_vertices.remove(i)
 
 def get_axis_point(selected):
-    t = selected[1].co - selected[0].co
-    u = selected[2].co - selected[0].co
-    v = selected[2].co - selected[1].co
+    t = selected[1] - selected[0]
+    u = selected[2] - selected[0]
+    v = selected[2] - selected[1]
     w = mathutils.Vector.cross(t,u)
     len_w = math.pow(w[2],2) + math.pow(w[1],2) + math.pow(w[0],2)
     tt = t*t
     uu = u*u
-    axis_pt = selected[0].co + (u*tt*(u*v) - t*uu*(t*v))*0.5/len_w
+    axis_pt = selected[0] + (u*tt*(u*v) - t*uu*(t*v))*0.5/len_w
     radius = math.sqrt(tt*uu*(v*v) * 0.25/len_w)
     return axis_pt, radius
 
 def get_radius(selected):
-    diff = selected[0].co - selected[1].co
+    diff = selected[0] - selected[1]
     diameter = math.sqrt(math.pow(diff[0],2) + math.pow(diff[1],2) + math.pow(diff[2],2))
     return diameter/2
 
@@ -171,13 +171,13 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
             ob["vp_model_types"] = scn.ignit_panel.vp_model_types
             attr=(o.name for o in scn.custom_faces)
             if ob.name not in attr:
+                scn.custom_faces_index = len(scn.custom_faces)
                 item = scn.custom_faces.add()
                 item.id = len(scn.custom_faces)
                 if len(scn.custom_vertices) > 0:
                     item.name = new_mesh
                 else:
                     item.name = ob.name
-                scn.custom_faces_index = (len(scn.custom_faces)-1)
             scn.custom_faces[scn.custom_faces_index].enabled = True
             clear_vertices_list(scn)
 
@@ -186,13 +186,13 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
             ob["vp_line_face"] = scn.ignit_panel.vp_line_face
             attr=(o.name for o in scn.custom_lines)
             if ob.name not in attr:
+                scn.custom_lines_index = len(scn.custom_lines)
                 item = scn.custom_lines.add()
                 item.id = len(scn.custom_lines)
                 if len(scn.custom_vertices) > 0:
                     item.name = new_mesh
                 else:
                     item.name = ob.name
-                scn.custom_lines_index = (len(scn.custom_lines)-1)
             scn.custom_lines[scn.custom_lines_index].enabled = True
             clear_vertices_list(scn)
 
@@ -220,16 +220,16 @@ class OBJECT_OT_AddPropsButton(bpy.types.Operator):
             if scn.ignit_panel.vp_model_types == "3D Circles":
                 ob["vp_obj_Point3"] = scn.ignit_panel.vp_obj_Point3
                 if hasCircle:
+                    scn.custom_circle_index = len(scn.custom_circle)
                     item = scn.custom_circle.add()
                     item.id = len(scn.custom_circle)
-                    scn.custom_circle_index = (len(scn.custom_circle)-1)
                     item.name = ob.name
                 scn.custom_circle[scn.custom_circle_index].enabled = True
             else:
                 if hasCylinder:
+                    scn.custom_cylinder_index = len(scn.custom_cylinder)
                     item = scn.custom_cylinder.add()
                     item.id = len(scn.custom_cylinder)
-                    scn.custom_cylinder_index = (len(scn.custom_cylinder)-1)
                     item.name = ob.name
                 scn.custom_cylinder[scn.custom_cylinder_index].enabled = True
 
@@ -276,7 +276,18 @@ class OBJECT_OT_Button(bpy.types.Operator):
             ob_edit = context.edit_object # check if in edit mode
             me = ob_edit.data
             bm = bmesh.from_edit_mesh(me)
-            selected = [v for v in bm.verts if v.select]
+            ob_selected = [v for v in bm.verts if v.select]
+            selected = []
+            mat = ob.matrix_world
+
+            for area in bpy.context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    if area.spaces[0].transform_orientation == 'GLOBAL':
+                        for i in range(0,len(ob_selected)):
+                            selected.append(mat * ob_selected[i].co)
+                    else:
+                        for i in range(0,len(ob_selected)):
+                            selected.append(ob_selected[i].co)
 
             #Get selected vertices
             if self.loc == "GET_VERTICES":
@@ -284,7 +295,7 @@ class OBJECT_OT_Button(bpy.types.Operator):
                 for v in selected:
                     item = scn.custom_vertices.add()
                     item.id = len(scn.custom_vertices)
-                    item.coord = [round(i,4) for i in v.co]
+                    item.coord = [round(i,4) for i in v]
                     item.name = ",".join(map(str,[x for x in item.coord]))
                     scn.custom_vertices_index = (len(scn.custom_vertices)-1)
 
@@ -317,7 +328,7 @@ class OBJECT_OT_Button(bpy.types.Operator):
             # Calculate/Set Axis Points
             elif self.loc == "AXIS1":
                 if len(selected) == 1:
-                    scn.ignit_panel.vp_obj_Point1 = selected[0].co
+                    scn.ignit_panel.vp_obj_Point1 = selected[0]
                 elif len(selected) == 3:
                     scn.ignit_panel.vp_obj_Point1, scn.ignit_panel.vp_radius = get_axis_point(selected)
                 elif len(selected) == 0:
@@ -327,7 +338,7 @@ class OBJECT_OT_Button(bpy.types.Operator):
 
             elif self.loc == "AXIS2":
                 if len(selected) == 1:
-                    scn.ignit_panel.vp_obj_Point2 = selected[0].co
+                    scn.ignit_panel.vp_obj_Point2 = selected[0]
                 elif len(selected) == 3:
                     scn.ignit_panel.vp_obj_Point2, scn.ignit_panel.vp_radius = get_axis_point(selected)
                 elif len(selected) == 0:
@@ -339,12 +350,12 @@ class OBJECT_OT_Button(bpy.types.Operator):
             elif self.loc == "CAL_RAD":
                 if scn.ignit_panel.vp_model_types == "3D Circles":
                     if len(selected) == 1:
-                        scn.ignit_panel.vp_obj_Point3 = selected[0].co
+                        scn.ignit_panel.vp_obj_Point3 = selected[0]
                     elif len(selected) == 2:
                         scn.ignit_panel.vp_radius = get_radius(selected)
                     elif len(selected) == 3:
-                        scn.ignit_panel.vp_obj_Point1 = selected[0].co
-                        scn.ignit_panel.vp_obj_Point2 = selected[1].co
+                        scn.ignit_panel.vp_obj_Point1 = selected[0]
+                        scn.ignit_panel.vp_obj_Point2 = selected[1]
                         scn.ignit_panel.vp_obj_Point3, scn.ignit_panel.vp_radius = get_axis_point(selected)
                     else:
                         self.report({'ERROR'}, "Cannot update circle from 0 or more than 3 points!\n" + message_cr)

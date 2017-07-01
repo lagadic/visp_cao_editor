@@ -83,9 +83,6 @@ def write_file(filepath, objects, scene,
                EXPORT_GLOBAL_MATRIX=None,
                ):
 
-    if EXPORT_GLOBAL_MATRIX is None:
-        EXPORT_GLOBAL_MATRIX = mathutils.Matrix()
-
     print('CAO Export path: %r' % filepath)
 
     time1 = time.time()
@@ -107,6 +104,14 @@ def write_file(filepath, objects, scene,
     facelines = []
     gcylinders = []
     gcircles = []
+
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            if area.spaces[0].transform_orientation == 'GLOBAL':
+                EXPORT_GLOBAL_MATRIX = mathutils.Matrix()
+                break
+            else:
+                EXPORT_GLOBAL_MATRIX = None
 
     # Get all meshes
     for ob_main in objects:
@@ -139,7 +144,8 @@ def write_file(filepath, objects, scene,
             if me is None or ob_main["vp_model_types"] not in ["3D Faces","3D Lines"]:
                 continue
 
-            me.transform(EXPORT_GLOBAL_MATRIX * ob_mat)# Translate to World Coordinate System
+            if EXPORT_GLOBAL_MATRIX is not None:
+                me.transform(EXPORT_GLOBAL_MATRIX * ob_mat)# Translate to World Coordinate System
 
             if EXPORT_TRI:
                 mesh_triangulate(me)

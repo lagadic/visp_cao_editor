@@ -71,41 +71,27 @@ class Uilist_actions_faces(bpy.types.Operator):
 # #########################################
 # Draw Panels and Button
 # #########################################
-ob_index = -1
-ob_select = None
 
 def primitive_name_update(self, context):
-    global ob_select
     scn = context.scene
     idx = scn.custom_faces_index
-    try:
-        bpy.data.objects[ob_select].name = scn.custom_faces[idx].name
-        ob_select = scn.custom_faces[idx].name
-    except:
-        pass
+
+    # print(idx,"  NEW NAME: ",scn.custom_faces[idx].name,"  OLD NAME: ",scn.custom_faces[idx].prev_name)
+    if scn.custom_faces[idx].prev_name == "":
+        scn.custom_faces[idx].prev_name = scn.custom_faces[idx].name
+    else:
+        bpy.data.objects[scn.custom_faces[idx].prev_name].name = scn.custom_faces[idx].name
+        scn.custom_faces[idx].prev_name = scn.custom_faces[idx].name
 
 class UL_items_faces(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        global ob_select, ob_index
-        scn = context.scene
-        idx = scn.custom_faces_index
-        try:
-            item = scn.custom_faces[idx]
-        except IndexError:
-            pass
-
-        else:
-            if ob_index != idx:
-                ob_index = idx
-                ob_select = scn.custom_faces[idx].name
-
         split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=True, icon='BORDER_RECT')
 
     def invoke(self, context, event):
-        pass
+        pass   
 
 class UIListPanelExample_faces(Panel):
     """Creates a Panel in the Object properties window"""
@@ -173,10 +159,9 @@ class Uilist_clearAllItems_faces(bpy.types.Operator):
 
         if len(lst) > 0:
             for i in range(len(lst)-1,-1,-1):
-                # bpy.data.objects[scn.custom_faces[i].name].select = True
-                # bpy.ops.object.delete()
+                scn.custom_faces_index -= 1
                 scn.custom_faces.remove(i)
-
+            scn.custom_faces_index += 1
             self.report({'INFO'}, "All items removed")
 
         else:
@@ -186,6 +171,7 @@ class Uilist_clearAllItems_faces(bpy.types.Operator):
 
 class CustomProp_faces(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(update=primitive_name_update)
+    prev_name = bpy.props.StringProperty()
     enabled = bpy.props.BoolProperty()
 
 # #########################################

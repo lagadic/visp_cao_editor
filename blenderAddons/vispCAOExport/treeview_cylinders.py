@@ -68,37 +68,20 @@ class Uilist_actions_cylinder(bpy.types.Operator):
 # #########################################
 # Draw Panels and Button
 # #########################################
-ob_index = -1
-ob_select = None
 
 def primitive_name_update(self, context):
-    global ob_select
     scn = context.scene
     idx = scn.custom_cylinder_index
-    try:
-        bpy.data.objects[ob_select].name = scn.custom_cylinder[idx].name
-        ob_select = scn.custom_cylinder[idx].name
-    except:
-        pass
+
+    if scn.custom_cylinder[idx].prev_name == "":
+        scn.custom_cylinder[idx].prev_name = scn.custom_cylinder[idx].name
+    else:
+        bpy.data.objects[scn.custom_cylinder[idx].prev_name].name = scn.custom_cylinder[idx].name
+        scn.custom_cylinder[idx].prev_name = scn.custom_cylinder[idx].name
 
 class UL_items_cylinder(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        global ob_select, ob_index
-        scn = context.scene
-        idx = scn.custom_cylinder_index
-
-        try:
-            item = scn.custom_cylinder[idx]
-        except IndexError:
-            pass
-
-        else:
-            if ob_index != idx:
-                ob_index = idx
-                ob_select = scn.custom_cylinder[idx].name
-                print("ob_select: ",ob_select)
-
         split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=False, icon='BORDER_RECT')
@@ -187,6 +170,7 @@ class Uilist_clearAllItems_cylinder(bpy.types.Operator):
 
 class CustomProp_cylinder(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(update=primitive_name_update)
+    prev_name = bpy.props.StringProperty()
     enabled = bpy.props.BoolProperty()
 
 # #########################################

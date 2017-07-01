@@ -68,35 +68,20 @@ class Uilist_actions_lines(bpy.types.Operator):
 # #########################################
 # Draw Panels and Button
 # #########################################
-ob_index = -1
-ob_select = None
 
 def primitive_name_update(self, context):
-    global ob_select
     scn = context.scene
     idx = scn.custom_lines_index
-    try:
-        bpy.data.objects[ob_select].name = scn.custom_lines[idx].name
-        ob_select = scn.custom_lines[idx].name
-    except:
-        pass
+
+    if scn.custom_lines[idx].prev_name == "":
+        scn.custom_lines[idx].prev_name = scn.custom_lines[idx].name
+    else:
+        bpy.data.objects[scn.custom_lines[idx].prev_name].name = scn.custom_lines[idx].name
+        scn.custom_lines[idx].prev_name = scn.custom_lines[idx].name
 
 class UL_items_lines(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        global ob_select, ob_index
-        scn = context.scene
-        idx = scn.custom_lines_index
-        try:
-            item = scn.custom_lines[idx]
-        except IndexError:
-            pass
-
-        else:
-            if ob_index != idx:
-                ob_index = idx
-                ob_select = scn.custom_lines[idx].name
-
         split = layout.split(0.1)
         split.label("%d" % (index))
         split.prop(item, "name", text="%s" % (item.enabled), emboss=False, translate=True, icon='BORDER_RECT')
@@ -181,6 +166,7 @@ class Uilist_clearAllItems_lines(bpy.types.Operator):
 
 class CustomProp_lines(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(update=primitive_name_update)
+    prev_name = bpy.props.StringProperty()
     enabled = bpy.props.BoolProperty()
 
 # #########################################
