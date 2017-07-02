@@ -86,7 +86,10 @@ class UIPanel(bpy.types.Panel):
                         col.label("Switch to EDIT MODE to get coordinates")
                         col.label("Note: Only needed if model is complex")
 
-                    # col1.label("")
+                    row3 = col1.row()
+                    row3.operator("my.button", text="Show Normals").loc="SHOW_NORM"
+                    row3.operator("my.button", text="Flip Normal").loc="FLIP_NORM"
+
                     col1.template_list("UL_items_vertices", "", scn, "custom_vertices", scn, "custom_vertices_index", rows=2)
                     row1 = col1.row()
                     row1.operator("my.button", text="Reduce Polycount").loc="LIM_DIS"
@@ -101,6 +104,10 @@ class UIPanel(bpy.types.Panel):
                         col1.enabled = True
                     else:
                         col.label("Switch to EDIT MODE to set radius and coordinates")
+
+                    row3 = col1.row()
+                    row3.operator("my.button", text="Show Normals").loc="SHOW_NORM"
+                    row3.operator("my.button", text="Flip Normal").loc="FLIP_NORM"
 
                     if scn.ignit_panel.vp_model_types == "3D Circles":
                         col1.label("First point on circumference")
@@ -123,6 +130,7 @@ class UIPanel(bpy.types.Panel):
                     col1.operator("my.button", text="Update").loc="CAL_RAD"
                     col1.label("")
                     col1.operator("my.button", text="Clear Values").loc="CLEAR_VAL"
+
                 col.label(" ")
                 layout.operator("model_types.selection")
  
@@ -270,6 +278,14 @@ class OBJECT_OT_Button(bpy.types.Operator):
 
         elif self.loc == "LIM_DIS":
             bpy.ops.mesh.dissolve_limited()
+
+        elif self.loc == "SHOW_NORM":
+            bpy.context.object.data.show_normal_face = True
+            bpy.context.scene.tool_settings.normal_size = 0.5
+
+        elif self.loc == "FLIP_NORM":
+            bpy.context.object.data.show_normal_face = True
+            bpy.ops.mesh.flip_normals()
 
         else:
             ob = context.selected_objects[0]
