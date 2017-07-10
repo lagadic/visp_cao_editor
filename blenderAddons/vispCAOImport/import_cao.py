@@ -55,7 +55,7 @@ def create_circle(circum_1,circum_2,center,radius):
     phi = math.acos( dz1 / r )
     # angle_z = math.atan( - math.cos( angle_x ) * math.sin( angle_y ) / math.sin( angle_x) ) - math.atan( dx / dy )
 
-    bpy.context.object.rotation_euler[1] = theta
+    bpy.context.object.rotation_euler[1] = theta #TODO: fix rotation
     bpy.context.object.rotation_euler[2] = phi
 
 def create_mesh(global_matrix,
@@ -77,10 +77,16 @@ def create_mesh(global_matrix,
             mesh_data.from_pydata(verts_loc, [], face_points)
         else:
             bm = bmesh.new()
-            for v in verts_loc:
-                bm.verts.new(v)
+            # Import only lines
+            for key in lines:
+                if hasattr(bm.verts, "ensure_lookup_table"):
+                    bm.verts.ensure_lookup_table()
+                    v1 = bm.verts.new(verts_loc[key[0]])
+                    v2 = bm.verts.new(verts_loc[key[1]])
+                    bm.edges.new((v1, v2))
             bm.to_mesh(mesh_data)
             bm.free()
+
         mesh_data.update()
         obj = bpy.data.objects.new(dataname, mesh_data)
         scene.objects.link(obj)
@@ -88,49 +94,11 @@ def create_mesh(global_matrix,
         obj.select = True
         obj.matrix_world = global_matrix
 
-        # Import only lines : TODO
-        if TEMPLATE_FLAG == "3D_F_LNS" and face_points == []:
-            bpy.ops.object.mode_set(mode='EDIT')
-            ob_edit = bpy.context.edit_object
-            me = ob_edit.data
-            bm = bmesh.from_edit_mesh(me)
-
-            for key in lines:
-                if hasattr(bm.verts, "ensure_lookup_table"): 
-                    bm.verts.ensure_lookup_table()
-                    for i in range(0,len(bm.verts)):
-                        bm.verts[i].select = False
-                    bm.verts[key[0]].select = True
-                    bm.verts[key[1]].select = True
-                    print(bm.verts[key[0]],bm.verts[key[1]])
-                    bpy.ops.mesh.edge_face_add()
-            try:
-                bpy.ops.mesh.delete(type='ONLY_FACE')
-            except:
-                pass
-
-            bpy.ops.object.mode_set(mode='OBJECT')
-            # mesh_data.edges.add(lines) # edges should be a list of (a, b) tuples # mesh_data.edges.foreach_set("vertices", unpack_list(lines))
-
     elif TEMPLATE_FLAG == "3D_CYL":
         create_cylinder( *cylinders)
 
     elif TEMPLATE_FLAG == "3D_CIR":
         create_circle( *circles)
-
-    # me.loops.foreach_set("vertex_index", loops_vert_idx)
-    # me.polygons.foreach_set("loop_start", faces_loop_start)
-    # me.polygons.foreach_set("loop_total", faces_loop_total)
-
-
-    # use_edges = use_edges and bool(edges)
-    # if use_edges:
-        # me.edges.add(len(edges))
-        # edges should be a list of (a, b) tuples
-        # me.edges.foreach_set("vertices", unpack_list(edges))
-
-    # me.validate(clean_customdata=False)
-    # me.update(calc_edges=use_edges)
 
     # new_objects.append(obj)
 
