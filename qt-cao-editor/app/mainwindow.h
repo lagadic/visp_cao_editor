@@ -11,9 +11,9 @@
 
 #include <QMainWindow>
 
-#include <Qt3DRender/qcamera.h>
+#include <Qt3DCore/qtransform.h>
+#include <Qt3DCore/qaspectengine.h>
 #include <Qt3DCore/qentity.h>
-#include <Qt3DRender/qcameralens.h>
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QWidget>
@@ -24,7 +24,8 @@
 #include <Qt3DInput/QInputAspect>
 #include <Qt3DInput/QKeyboardHandler>
 
-#include <Qt3DExtras/qtorusmesh.h>
+#include <Qt3DRender/qcamera.h>
+#include <Qt3DRender/qcameralens.h>
 #include <Qt3DRender/qmesh.h>
 #include <Qt3DRender/qtechnique.h>
 #include <Qt3DRender/qmaterial.h>
@@ -34,13 +35,9 @@
 #include <Qt3DRender/qsceneloader.h>
 #include <Qt3DRender/qpointlight.h>
 #include <Qt3DRender/qenvironmentlight.h>
-
-#include <Qt3DCore/qtransform.h>
-#include <Qt3DCore/qaspectengine.h>
-
 #include <Qt3DRender/qrenderaspect.h>
-#include <Qt3DExtras/qforwardrenderer.h>
 
+#include <Qt3DExtras/qforwardrenderer.h>
 #include <Qt3DExtras/qt3dwindow.h>
 #include <Qt3DExtras/qfirstpersoncameracontroller.h>
 
@@ -62,6 +59,7 @@ public:
     MainWindow();
 
     void loadFile(const QString &fileName);
+    SceneModifier *modifier;
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -85,7 +83,6 @@ private:
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
     QString strippedName(const QString &fullFileName);
-    SceneModifier *modifier;
 
     QPlainTextEdit *textEdit;
     QString curFile;

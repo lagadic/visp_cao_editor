@@ -1,51 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2014 Klaralvdalens Datakonsult AB (KDAB).
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the Qt3D module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
-**
-** "Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are
-** met:
-**   * Redistributions of source code must retain the above copyright
-**     notice, this list of conditions and the following disclaimer.
-**   * Redistributions in binary form must reproduce the above copyright
-**     notice, this list of conditions and the following disclaimer in
-**     the documentation and/or other materials provided with the
-**     distribution.
-**   * Neither the name of The Qt Company Ltd nor the names of its
-**     contributors may be used to endorse or promote products derived
-**     from this software without specific prior written permission.
-**
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-**
-** $QT_END_LICENSE$
-**
+** Copyright (C) 2017 Vikas Thamizharasan
 ****************************************************************************/
 
 #include "scenemodifier.h"
@@ -64,13 +19,16 @@
 SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
     : m_rootEntity(rootEntity)
     , m_facePickers(nullptr)
+    , m_caoEntity(nullptr)
 {
     // Cuboid shape data
     Qt3DExtras::QCuboidMesh *cuboid = new Qt3DExtras::QCuboidMesh();
-
+    cuboid->setXYMeshResolution(QSize(2, 2));
+    cuboid->setYZMeshResolution(QSize(2, 2));
+    cuboid->setXZMeshResolution(QSize(2, 2));
     // CuboidMesh Transform
     Qt3DCore::QTransform *cuboidTransform = new Qt3DCore::QTransform();
-    cuboidTransform->setScale(0.1f);
+    cuboidTransform->setScale(1.0f);
     cuboidTransform->setTranslation(QVector3D(0.0f, -2.0f, 0.0f));
 
     Qt3DExtras::QPhongMaterial *cuboidMaterial = new Qt3DExtras::QPhongMaterial();
@@ -87,19 +45,29 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
 SceneModifier::~SceneModifier()
 {
     delete m_facePickers;
+    delete m_cuboidEntity;
+    delete m_caoEntity;
 }
 
-void SceneModifier::createMesh(QTextStream &input)
+void SceneModifier::parse3DFile(QTextStream &input)
 {
-    m_cuboidEntity->setEnabled(false);
+    if(m_cuboidEntity)
+        delete m_cuboidEntity;
+
     QString m_template =  "";
     int idx = 0;
     float* vertexRawData;
+    int* lineRawData;
+    QList<int> facelineRawData;
     int vertexNum = 0;
+    int lineNum = 0;
+    int facelineNum = 0;
+
     while(!input.atEnd())
     {
         QString line = input.readLine();
         QStringList fields = line.split("#");
+
         if(fields.count() == 2)
         {
             QString type = fields[1].replace(" ","");
@@ -122,8 +90,9 @@ void SceneModifier::createMesh(QTextStream &input)
             QStringList data = fields[0].split(" ");
             if(data.count() == 1)
             {
-                vertexNum = data[0].toInt();
-                vertexRawData = new float[vertexNum*3];
+                idx = 0;
+                vertexNum = data[0].toInt() * 3;
+                vertexRawData = new float[vertexNum];
                 qInfo() << vertexNum << fields;
             }
             else if(data.count() >= 3)
@@ -131,9 +100,69 @@ void SceneModifier::createMesh(QTextStream &input)
                 vertexRawData[idx++] = data[0].toFloat();vertexRawData[idx++] = data[1].toFloat();vertexRawData[idx++] = data[2].toFloat();
             }
         }
+
+        else if(m_template == "3D_LNS" && !fields[0].isEmpty())
+        {
+            QStringList data = fields[0].split(" ");
+            if(data.count() == 1)
+            {
+                idx = 0;
+                lineNum = data[0].toInt()*2;
+                lineRawData = new int[lineNum];
+            }
+            else if(data.count() >= 2)
+            {
+                lineRawData[idx++] = data[0].toInt();lineRawData[idx++] = data[1].toInt();
+            }
+        }
+
+        else if(m_template == "3D_F_LNS" && !fields[0].isEmpty())
+        {
+            QStringList data = fields[0].split(" ");
+            if(data.count() == 1)
+            {
+                idx = 0;
+                facelineNum = 0;
+            }
+            else if(data.count() > 3)
+            {
+                facelineNum += data[0].toInt();
+                for(int i=1;i<=data[0].toInt();i++)
+                    facelineRawData.append(data[i].toInt());
+            }
+        }
     }
 
-    //Borrowed Mesh Cration
+    float* vertexMapData;
+    vertexMapData = (facelineRawData.isEmpty() ? (lineRawData ? new float[lineNum*3] : vertexRawData) : new float[facelineNum*3]);
+    vertexNum = (facelineRawData.isEmpty() ? (lineRawData ? lineNum*3 : vertexNum) : facelineNum*3);
+
+    if(lineRawData && facelineRawData.isEmpty())
+        for(int i = 0; i < lineNum; i++)
+        {
+            int index = lineRawData[i]*3;
+            vertexMapData[i*3] = vertexRawData[index];
+            vertexMapData[i*3+1] = vertexRawData[index+1];
+            vertexMapData[i*3+2] = vertexRawData[index+2];
+        }
+
+    else
+        for(int i = 0; i < facelineNum; i++)
+        {
+            int index = lineRawData[facelineRawData[i]]*3;
+            vertexMapData[i*3] = vertexRawData[index];
+            vertexMapData[i*3+1] = vertexRawData[index+1];
+            vertexMapData[i*3+2] = vertexRawData[index+2];
+        }
+
+    this->createMesh(vertexMapData, vertexNum);
+}
+
+void SceneModifier::createMesh(float* vertexMapData,int vertexNum)
+{
+
+
+    // Mesh Creation
     meshRenderer = new Qt3DRender::QGeometryRenderer;
     geometry = new Qt3DRender::QGeometry(meshRenderer);
 
@@ -144,7 +173,7 @@ void SceneModifier::createMesh(QTextStream &input)
     QByteArray ba;
     int bufferSize = vertexNum * sizeof(float);
     ba.resize(bufferSize);
-    memcpy(ba.data(), reinterpret_cast<const char*>(vertexRawData), bufferSize);
+    memcpy(ba.data(), reinterpret_cast<const char*>(vertexMapData), bufferSize);
     vertexDataBuffer->setData(ba);
 
     int stride = 3 * sizeof(float);
@@ -165,38 +194,39 @@ void SceneModifier::createMesh(QTextStream &input)
     meshRenderer->setInstanceCount(1);
     meshRenderer->setIndexOffset(0);
     meshRenderer->setFirstInstance(0);
-    meshRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
+    meshRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
     meshRenderer->setGeometry(geometry);
-    meshRenderer->setVertexCount(vertexNum / 2);
+//    meshRenderer->setPrimitiveCount( * 3);
+    meshRenderer->setVertexCount(vertexNum/2);
 
 
-    // TorusMesh Transform
-    Qt3DCore::QTransform *torusTransform = new Qt3DCore::QTransform();
-    torusTransform->setScale(3.0f);
-//    torusTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 1.0f, 0.0f), 25.0f));
-    torusTransform->setTranslation(QVector3D(0.0f, 0.0f, 0.0f));
+    // Mesh Transform
+    Qt3DCore::QTransform *caoTransform = new Qt3DCore::QTransform();
+    caoTransform->setScale(2.0f);
+//    caoTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 1.0f, 0.0f), 25.0f));
+    caoTransform->setTranslation(QVector3D(0.0f, 0.0f, 0.0f));
 
-    torusMaterial = new Qt3DExtras::QPhongMaterial();
-    torusMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
+    caoMaterial = new Qt3DExtras::QPhongMaterial();
+    caoMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
 
-    // Torus
-    Qt3DCore::QEntity *m_torusEntity = new Qt3DCore::QEntity(m_rootEntity);
+    Qt3DCore::QEntity *m_caoEntity = new Qt3DCore::QEntity(m_rootEntity);
 
     m_facePickers = new QList<Qt3DRender::QObjectPicker *>();
-    Qt3DRender::QObjectPicker *picker1 = new Qt3DRender::QObjectPicker(m_torusEntity);
+    Qt3DRender::QObjectPicker *picker1 = new Qt3DRender::QObjectPicker(m_caoEntity);
     picker1->setHoverEnabled(true);
-    picker1->setObjectName(QStringLiteral("__internal object picker ") + m_torusEntity->objectName());
+    picker1->setObjectName(QStringLiteral("__internal object picker ") + m_caoEntity->objectName());
     m_facePickers->append(picker1);
-    m_torusEntity->addComponent(meshRenderer);
-    m_torusEntity->addComponent(torusMaterial);
-    m_torusEntity->addComponent(torusTransform);
-    m_torusEntity->addComponent(m_facePickers->at(0));
+    m_caoEntity->addComponent(meshRenderer);
+    m_caoEntity->addComponent(caoMaterial);
+    m_caoEntity->addComponent(caoTransform);
+    m_caoEntity->addComponent(m_facePickers->at(0));
+    m_caoEntity->setEnabled(true);
     connect(m_facePickers->at(0), &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
 }
 
-void SceneModifier::enableTorus(bool enabled)
+void SceneModifier::enableCaoMesh(bool enabled)
 {
-    m_torusEntity->setEnabled(enabled);
+    m_caoEntity->setEnabled(enabled);
 }
 
 void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
@@ -207,7 +237,7 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         if (pressedEntity && pressedEntity->isEnabled())
         {
 //           pressedEntity->setEnabled(!pressedEntity->isEnabled());
-            torusMaterial->setDiffuse(QColor(200,100,12,255));
+            caoMaterial->setDiffuse(QColor(200,100,12,255));
         }
     }
 }

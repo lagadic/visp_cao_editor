@@ -94,13 +94,16 @@ int main(int argc, char **argv)
     Qt3DExtras::QFirstPersonCameraController *camController = new Qt3DExtras::QFirstPersonCameraController(rootEntity);
     camController->setCamera(cameraEntity);
 
-    // Scenemodifier
-    SceneModifier *modifier = new SceneModifier(rootEntity);
-
     // Set root object of the scene
     view->setRootEntity(rootEntity);
 
+
     MainWindow mainWin;
+
+    // Scenemodifier
+    mainWin.modifier = new SceneModifier(rootEntity);
+
+
     if (!parser.positionalArguments().isEmpty())
         mainWin.loadFile(parser.positionalArguments().first());
 

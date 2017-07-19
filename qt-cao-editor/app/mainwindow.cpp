@@ -188,9 +188,7 @@ void MainWindow::loadFile(const QString &fileName)
 
     QTextStream in(&file);
 
-    Qt3DCore::QEntity *rootEntity = new Qt3DCore::QEntity();
-    modifier = new SceneModifier(rootEntity);
-    modifier->createMesh(in);
+    modifier->parse3DFile(in);
 
     file.close();
 //    qInfo() << in.;
