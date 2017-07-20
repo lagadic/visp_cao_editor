@@ -49,6 +49,15 @@ SceneModifier::~SceneModifier()
     delete m_caoEntity;
 }
 
+int SceneModifier::primitiveType(QString &type)
+{
+    const QStringList t_defined = {"3DPoints","3DLines","Facesfrom3Dlines","Facesfrom3Dpoints","3Dcylinders","3Dcircles"};
+    for(int i=1;i<=6;i++)
+        if(!type.compare(t_defined[i-1], Qt::CaseInsensitive))
+            return i;
+    return 0;
+}
+
 void SceneModifier::parse3DFile(QTextStream &input)
 {
     if(m_cuboidEntity)
@@ -71,18 +80,21 @@ void SceneModifier::parse3DFile(QTextStream &input)
         if(fields.count() == 2)
         {
             QString type = fields[1].replace(" ","");
-            if(!type.compare("3DPoints", Qt::CaseInsensitive))
-                m_template = "3D_PTS";
-            else if(!type.compare("3DLines", Qt::CaseInsensitive))
-                m_template = "3D_LNS";
-            else if(!type.compare("Facesfrom3Dlines", Qt::CaseInsensitive))
-                m_template = "3D_F_LNS";
-            else if(!type.compare("Facesfrom3Dpoints", Qt::CaseInsensitive))
-                m_template = "3D_F_PTS";
-            else if(!type.compare("3Dcylinders", Qt::CaseInsensitive))
-                m_template = "3D_CYL";
-            else if(!type.compare("3Dcircles", Qt::CaseInsensitive))
-                m_template = "3D_CIR";
+            switch(primitiveType(type))
+            {
+                case 1 : m_template = "3D_PTS";
+                         break;
+                case 2 : m_template = "3D_LNS";
+                         break;
+                case 3 : m_template = "3D_F_LNS";
+                         break;
+                case 4 : m_template = "3D_F_PTS";
+                         break;
+                case 5 : m_template = "3Dcylinders";
+                         break;
+                case 6 : m_template = "3Dcircles";
+                         break;
+            }
         }
 
         if(m_template == "3D_PTS" && !fields[0].isEmpty())
@@ -134,8 +146,8 @@ void SceneModifier::parse3DFile(QTextStream &input)
     }
 
     float* vertexMapData;
-    vertexMapData = (facelineRawData.isEmpty() ? (lineRawData ? new float[lineNum*3] : vertexRawData) : new float[facelineNum*3]);
-    vertexNum = (facelineRawData.isEmpty() ? (lineRawData ? lineNum*3 : vertexNum) : facelineNum*3);
+    vertexMapData = (facelineRawData.isEmpty() ? (lineRawData ? new float[lineNum*3] : vertexRawData) : new float[facelineNum*6]);
+    vertexNum = (facelineRawData.isEmpty() ? (lineRawData ? lineNum*3 : vertexNum) : facelineNum*6);
 
     if(lineRawData && facelineRawData.isEmpty())
         for(int i = 0; i < lineNum; i++)
@@ -149,10 +161,10 @@ void SceneModifier::parse3DFile(QTextStream &input)
     else
         for(int i = 0; i < facelineNum; i++)
         {
-            int index = lineRawData[facelineRawData[i]]*3;
-            vertexMapData[i*3] = vertexRawData[index];
-            vertexMapData[i*3+1] = vertexRawData[index+1];
-            vertexMapData[i*3+2] = vertexRawData[index+2];
+            int index = lineRawData[facelineRawData[i]*2]*3;
+            vertexMapData[i*6] = vertexRawData[index];vertexMapData[i*6+1] = vertexRawData[index+1];vertexMapData[i*6+2] = vertexRawData[index+2];
+            index = lineRawData[facelineRawData[i]*2+1]*3;
+            vertexMapData[i*6+3] = vertexRawData[index];vertexMapData[i*6+4] = vertexRawData[index+1];vertexMapData[i*6+5] = vertexRawData[index+2];
         }
 
     this->createMesh(vertexMapData, vertexNum);
@@ -160,7 +172,6 @@ void SceneModifier::parse3DFile(QTextStream &input)
 
 void SceneModifier::createMesh(float* vertexMapData,int vertexNum)
 {
-
 
     // Mesh Creation
     meshRenderer = new Qt3DRender::QGeometryRenderer;
@@ -196,9 +207,7 @@ void SceneModifier::createMesh(float* vertexMapData,int vertexNum)
     meshRenderer->setFirstInstance(0);
     meshRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
     meshRenderer->setGeometry(geometry);
-//    meshRenderer->setPrimitiveCount( * 3);
-    meshRenderer->setVertexCount(vertexNum/2);
-
+    meshRenderer->setVertexCount(vertexNum/3);
 
     // Mesh Transform
     Qt3DCore::QTransform *caoTransform = new Qt3DCore::QTransform();
@@ -218,7 +227,7 @@ void SceneModifier::createMesh(float* vertexMapData,int vertexNum)
     m_facePickers->append(picker1);
     m_caoEntity->addComponent(meshRenderer);
     m_caoEntity->addComponent(caoMaterial);
-    m_caoEntity->addComponent(caoTransform);
+//    m_caoEntity->addComponent(caoTransform);
     m_caoEntity->addComponent(m_facePickers->at(0));
     m_caoEntity->setEnabled(true);
     connect(m_facePickers->at(0), &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);

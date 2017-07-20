@@ -47,6 +47,7 @@ public slots:
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
     void createMesh(float* vertexMapData,int vertexNum);
+    int primitiveType(QString &type);
 
 private:
     Qt3DCore::QEntity *m_rootEntity;
