@@ -1,34 +1,34 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the examples of the Qt Toolkit.
-
-****************************************************************************/
-
 #include <QtWidgets>
 
-#include "mainwindow.h"
+#include "xmleditor.h"
 
-MainWindow::MainWindow()
+
+XmlEditor::XmlEditor()
+    : textEdit(new QPlainTextEdit)
+
 {
+    setCentralWidget(textEdit);
+
     createActions();
     createStatusBar();
 
     readSettings();
 
+    connect(textEdit->document(), &QTextDocument::contentsChanged,
+            this, &XmlEditor::documentWasModified);
+
 #ifndef QT_NO_SESSIONMANAGER
     QGuiApplication::setFallbackSessionManagementEnabled(false);
     connect(qApp, &QGuiApplication::commitDataRequest,
-            this, &MainWindow::commitData);
+            this, &XmlEditor::commitData);
 #endif
 
     setCurrentFile(QString());
     setUnifiedTitleAndToolBarOnMac(true);
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void XmlEditor::closeEvent(QCloseEvent *event)
+
 {
     if (maybeSave()) {
         writeSettings();
@@ -38,22 +38,33 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-void MainWindow::newFile()
+void XmlEditor::newFile()
+
 {
-    xmlWin = new XmlEditor();
-    xmlWin->show();
+    if (maybeSave()) {
+        textEdit->clear();
+
+//        textEdit->setPlainText(in.readAll());
+        setCurrentFile(QString());
+    }
 }
 
-void MainWindow::open()
+
+
+void XmlEditor::open()
+
 {
     if (maybeSave()) {
         QString fileName = QFileDialog::getOpenFileName(this);
         if (!fileName.isEmpty())
-            loadCaoFile(fileName);
+            loadFile(fileName);
     }
 }
 
-bool MainWindow::save()
+
+
+bool XmlEditor::save()
+
 {
     if (curFile.isEmpty()) {
         return saveAs();
@@ -62,7 +73,10 @@ bool MainWindow::save()
     }
 }
 
-bool MainWindow::saveAs()
+
+
+bool XmlEditor::saveAs()
+
 {
     QFileDialog dialog(this);
     dialog.setWindowModality(Qt::WindowModal);
@@ -72,7 +86,10 @@ bool MainWindow::saveAs()
     return saveFile(dialog.selectedFiles().first());
 }
 
-void MainWindow::about()
+
+
+void XmlEditor::about()
+
 {
    QMessageBox::about(this, tr("About Application"),
             tr("The <b>Application</b> example demonstrates how to "
@@ -80,45 +97,48 @@ void MainWindow::about()
                "toolbars, and a status bar."));
 }
 
-void MainWindow::createActions()
+
+
+void XmlEditor::documentWasModified()
+
+{
+    setWindowModified(textEdit->document()->isModified());
+}
+
+
+
+void XmlEditor::createActions()
+
 {
 
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    QToolBar *fileToolBar = addToolBar(tr("File"));
+    const QIcon newIcon = QIcon::fromTheme("document-new", QIcon(":/images/new.png"));
+    QAction *newAct = new QAction(newIcon, tr("&New"), this);
+    newAct->setShortcuts(QKeySequence::New);
+    newAct->setStatusTip(tr("Create a new file"));
+    connect(newAct, &QAction::triggered, this, &XmlEditor::newFile);
+    fileMenu->addAction(newAct);
 
 
     const QIcon openIcon = QIcon::fromTheme("document-open", QIcon(":/images/open.png"));
-    QAction *openAct = new QAction(openIcon, tr("&Import ViSP .cao"), this);
+    QAction *openAct = new QAction(openIcon, tr("&Open..."), this);
     openAct->setShortcuts(QKeySequence::Open);
-    openAct->setStatusTip(tr("Import a .cao file"));
-    connect(openAct, &QAction::triggered, this, &MainWindow::open);
+    openAct->setStatusTip(tr("Open an existing file"));
+    connect(openAct, &QAction::triggered, this, &XmlEditor::open);
     fileMenu->addAction(openAct);
-    fileToolBar->addAction(openAct);
 
 
     const QIcon saveIcon = QIcon::fromTheme("document-save", QIcon(":/images/save.png"));
     QAction *saveAct = new QAction(saveIcon, tr("&Save"), this);
     saveAct->setShortcuts(QKeySequence::Save);
     saveAct->setStatusTip(tr("Save the document to disk"));
-    connect(saveAct, &QAction::triggered, this, &MainWindow::save);
+    connect(saveAct, &QAction::triggered, this, &XmlEditor::save);
     fileMenu->addAction(saveAct);
-    fileToolBar->addAction(saveAct);
-
-    fileToolBar->addSeparator();
-
-    const QIcon newxmlIcon = QIcon::fromTheme("document-new", QIcon(":/images/new.png"));
-    QAction *newAct = new QAction(newxmlIcon, tr("&Open XML Editor"), this);
-    newAct->setShortcuts(QKeySequence::New);
-    newAct->setStatusTip(tr("Open XML Editor"));
-    connect(newAct, &QAction::triggered, this, &MainWindow::newFile);
-    fileMenu->addAction(newAct);
-    fileToolBar->addAction(newAct);
 
     const QIcon saveAsIcon = QIcon::fromTheme("document-save-as");
-    QAction *saveAsAct = fileMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
+    QAction *saveAsAct = fileMenu->addAction(saveAsIcon, tr("Save &As..."), this, &XmlEditor::saveAs);
     saveAsAct->setShortcuts(QKeySequence::SaveAs);
     saveAsAct->setStatusTip(tr("Save the document under a new name"));
-
 
     fileMenu->addSeparator();
 
@@ -128,23 +148,60 @@ void MainWindow::createActions()
 
     exitAct->setStatusTip(tr("Exit the application"));
 
-    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
-    QAction *aboutAct = helpMenu->addAction(tr("&About"), this, &MainWindow::about);
-    aboutAct->setStatusTip(tr("Show the application's About box"));
+    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
+
+#ifndef QT_NO_CLIPBOARD
+    const QIcon cutIcon = QIcon::fromTheme("edit-cut", QIcon(":/images/cut.png"));
+    QAction *cutAct = new QAction(cutIcon, tr("Cu&t"), this);
+
+    cutAct->setShortcuts(QKeySequence::Cut);
+    cutAct->setStatusTip(tr("Cut the current selection's contents to the "
+                            "clipboard"));
+    connect(cutAct, &QAction::triggered, textEdit, &QPlainTextEdit::cut);
+    editMenu->addAction(cutAct);
+
+    const QIcon copyIcon = QIcon::fromTheme("edit-copy", QIcon(":/images/copy.png"));
+    QAction *copyAct = new QAction(copyIcon, tr("&Copy"), this);
+    copyAct->setShortcuts(QKeySequence::Copy);
+    copyAct->setStatusTip(tr("Copy the current selection's contents to the "
+                             "clipboard"));
+    connect(copyAct, &QAction::triggered, textEdit, &QPlainTextEdit::copy);
+    editMenu->addAction(copyAct);
+
+    const QIcon pasteIcon = QIcon::fromTheme("edit-paste", QIcon(":/images/paste.png"));
+    QAction *pasteAct = new QAction(pasteIcon, tr("&Paste"), this);
+    pasteAct->setShortcuts(QKeySequence::Paste);
+    pasteAct->setStatusTip(tr("Paste the clipboard's contents into the current "
+                              "selection"));
+    connect(pasteAct, &QAction::triggered, textEdit, &QPlainTextEdit::paste);
+    editMenu->addAction(pasteAct);
+
+    menuBar()->addSeparator();
+
+#endif // !QT_NO_CLIPBOARD
 
 
-    QAction *aboutQtAct = helpMenu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
-    aboutQtAct->setStatusTip(tr("Show the Qt library's About box"));
+#ifndef QT_NO_CLIPBOARD
+    cutAct->setEnabled(false);
 
+    copyAct->setEnabled(false);
+    connect(textEdit, &QPlainTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
+    connect(textEdit, &QPlainTextEdit::copyAvailable, copyAct, &QAction::setEnabled);
+#endif // !QT_NO_CLIPBOARD
 }
 
 
-void MainWindow::createStatusBar()
+
+void XmlEditor::createStatusBar()
+
 {
     statusBar()->showMessage(tr("Ready"));
 }
 
-void MainWindow::readSettings()
+
+
+void XmlEditor::readSettings()
+
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     const QByteArray geometry = settings.value("geometry", QByteArray()).toByteArray();
@@ -158,17 +215,22 @@ void MainWindow::readSettings()
     }
 }
 
-void MainWindow::writeSettings()
+
+
+void XmlEditor::writeSettings()
+
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.setValue("geometry", saveGeometry());
 }
 
 
-bool MainWindow::maybeSave()
-{
-    //Check if any modifications
 
+bool XmlEditor::maybeSave()
+
+{
+    if (!textEdit->document()->isModified())
+        return true;
     const QMessageBox::StandardButton ret
         = QMessageBox::warning(this, tr("Application"),
                                tr("The document has been modified.\n"
@@ -185,8 +247,12 @@ bool MainWindow::maybeSave()
     return true;
 }
 
-void MainWindow::loadCaoFile(const QString &fileName)
+
+
+void XmlEditor::loadFile(const QString &fileName)
+
 {
+    qInfo() << fileName;
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("Application"),
@@ -196,24 +262,22 @@ void MainWindow::loadCaoFile(const QString &fileName)
     }
 
     QTextStream in(&file);
-
-    modifier->parse3DFile(in);
-
-    file.close();
-//    qInfo() << in.;
-// #ifndef QT_NO_CURSOR
-//     QApplication::setOverrideCursor(Qt::WaitCursor);
-// #endif
-//     textEdit->setPlainText(in.readAll());
-// #ifndef QT_NO_CURSOR
-//     QApplication::restoreOverrideCursor();
-// #endif
+#ifndef QT_NO_CURSOR
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+#endif
+    textEdit->setPlainText(in.readAll());
+#ifndef QT_NO_CURSOR
+    QApplication::restoreOverrideCursor();
+#endif
 
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("File loaded"), 2000);
 }
 
-bool MainWindow::saveFile(const QString &fileName)
+
+
+bool XmlEditor::saveFile(const QString &fileName)
+
 {
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
@@ -225,13 +289,13 @@ bool MainWindow::saveFile(const QString &fileName)
     }
 
     QTextStream out(&file);
-// #ifndef QT_NO_CURSOR
-//     QApplication::setOverrideCursor(Qt::WaitCursor);
-// #endif
-//     out << textEdit->toPlainText();
-// #ifndef QT_NO_CURSOR
-//     QApplication::restoreOverrideCursor();
-// #endif
+#ifndef QT_NO_CURSOR
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+#endif
+    out << textEdit->toPlainText();
+#ifndef QT_NO_CURSOR
+    QApplication::restoreOverrideCursor();
+#endif
 
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("File saved"), 2000);
@@ -240,35 +304,37 @@ bool MainWindow::saveFile(const QString &fileName)
 
 
 
-void MainWindow::setCurrentFile(const QString &fileName)
+void XmlEditor::setCurrentFile(const QString &fileName)
+
 {
     curFile = fileName;
-    
+    textEdit->document()->setModified(false);
     setWindowModified(false);
 
     QString shownName = curFile;
     if (curFile.isEmpty())
-        shownName = "untitled.cao";
+        shownName = "untitled.xml";
     setWindowFilePath(shownName);
 }
 
 
 
-QString MainWindow::strippedName(const QString &fullFileName)
+QString XmlEditor::strippedName(const QString &fullFileName)
+
 {
     return QFileInfo(fullFileName).fileName();
 }
 
 #ifndef QT_NO_SESSIONMANAGER
-void MainWindow::commitData(QSessionManager &manager)
+void XmlEditor::commitData(QSessionManager &manager)
 {
     if (manager.allowsInteraction()) {
         if (!maybeSave())
             manager.cancel();
     } else {
         // Non-interactive: save without asking
-        // if (textEdit->document()->isModified())
-            // save();
+        if (textEdit->document()->isModified())
+            save();
     }
 }
 #endif

@@ -11,6 +11,7 @@
 
 #include <Qt3DCore/qentity.h>
 #include <Qt3DCore/qtransform.h>
+#include <QtCore/qmath.h>
 
 #include <Qt3DExtras/QTorusMesh>
 #include <Qt3DExtras/QConeMesh>
@@ -19,6 +20,7 @@
 #include <Qt3DExtras/QPlaneMesh>
 #include <Qt3DExtras/QSphereMesh>
 #include <Qt3DExtras/QPhongMaterial>
+#include <Qt3DExtras/QPerVertexColorMaterial>
 
 #include <Qt3DInput/QKeyboardHandler>
 
@@ -47,6 +49,7 @@ public slots:
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
     void createMesh(float* vertexMapData,int vertexNum);
+    void createCylinder(QVector3D axis_1, QVector3D axis_2, float radius);
     int primitiveType(QString &type);
 
 private:

@@ -3,3 +3,8 @@
 # Build file and directory
 qt-cao-editor/app/app.pro.user
 qt-cao-editor/build-app-Desktop_Qt_5_9_1_GCC_64bit-Debug
+
+# Test File and directory
+qt-cao-editor/app/temp.cpp
+qt-cao-editor/app/lib
+

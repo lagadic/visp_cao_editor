@@ -42,6 +42,7 @@
 #include <Qt3DExtras/qfirstpersoncameracontroller.h>
 
 #include "scenemodifier.h"
+#include "xmleditor.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -58,7 +59,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow();
 
-    void loadFile(const QString &fileName);
+    void loadCaoFile(const QString &fileName);
     SceneModifier *modifier;
 
 protected:
@@ -83,9 +84,9 @@ private:
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
     QString strippedName(const QString &fullFileName);
-
-    QPlainTextEdit *textEdit;
     QString curFile;
+
+    XmlEditor *xmlWin;
 };
 //! [0]
 

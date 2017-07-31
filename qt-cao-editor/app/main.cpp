@@ -44,10 +44,11 @@
 #include <QMenuBar>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
-
+#include <QLCDNumber>
 #include <QGuiApplication>
 
 #include "mainwindow.h"
+
 #include "scenemodifier.h"
 
 
@@ -61,12 +62,14 @@ int main(int argc, char **argv)
     parser.addPositionalArgument("file", "The file to open.");
     parser.process(app);
 
+    MainWindow mainWin;
+
     Qt3DExtras::Qt3DWindow *view = new Qt3DExtras::Qt3DWindow();
     view->defaultFrameGraph()->setClearColor(QColor(200,207,200,255));
-    QWidget *container = QWidget::createWindowContainer(view);
+    QWidget *sceneContainer = QWidget::createWindowContainer(view);
     QSize screenSize = view->screen()->size();
-    container->setMinimumSize(QSize(200, 100));
-    container->setMaximumSize(screenSize);
+    sceneContainer->setMinimumSize(QSize(200, 100));
+    sceneContainer->setMaximumSize(screenSize);
     Qt3DInput::QInputAspect *input = new Qt3DInput::QInputAspect;
     view->registerAspect(input);
 
@@ -77,7 +80,7 @@ int main(int argc, char **argv)
     Qt3DRender::QCamera *cameraEntity = view->camera();
 
     cameraEntity->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.1f, 1000.0f);
-    cameraEntity->setPosition(QVector3D(0, 0, 20.0f));
+    cameraEntity->setPosition(QVector3D(0, 10.0f, 20.0f));
     cameraEntity->setUpVector(QVector3D(0, 1, 0));
     cameraEntity->setViewCenter(QVector3D(0, 0, 0));
 
@@ -97,17 +100,14 @@ int main(int argc, char **argv)
     // Set root object of the scene
     view->setRootEntity(rootEntity);
 
-
-    MainWindow mainWin;
-
     // Scenemodifier
     mainWin.modifier = new SceneModifier(rootEntity);
 
 
     if (!parser.positionalArguments().isEmpty())
-        mainWin.loadFile(parser.positionalArguments().first());
+        mainWin.loadCaoFile(parser.positionalArguments().first());
 
-    mainWin.setCentralWidget(container);
+    mainWin.setCentralWidget(sceneContainer);
     mainWin.resize(800, 600);
     mainWin.show();
 
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     // QHBoxLayout *hLayout = new QHBoxLayout(widget);
     // QVBoxLayout *vLayout = new QVBoxLayout();
     // vLayout->setAlignment(Qt::AlignTop);
-    // hLayout->addWidget(container, 1);
+    // hLayout->addWidget(sceneContainer, 1);
     // hLayout->addLayout(vLayout);
     // widget->setWindowTitle(QStringLiteral("Basic shapes"));
     // Create control widgets
