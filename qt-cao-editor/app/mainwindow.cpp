@@ -83,8 +83,8 @@ void MainWindow::about()
 void MainWindow::createActions()
 {
 
-    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    QToolBar *fileToolBar = addToolBar(tr("File"));
+    QMenu *caoMenu = menuBar()->addMenu(tr("&File"));
+    QToolBar *caoToolBar = addToolBar(tr("File"));
 
 
     const QIcon openIcon = QIcon::fromTheme("document-open", QIcon(":/images/open.png"));
@@ -92,8 +92,8 @@ void MainWindow::createActions()
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Import a .cao file"));
     connect(openAct, &QAction::triggered, this, &MainWindow::open);
-    fileMenu->addAction(openAct);
-    fileToolBar->addAction(openAct);
+    caoMenu->addAction(openAct);
+    caoToolBar->addAction(openAct);
 
 
     const QIcon saveIcon = QIcon::fromTheme("document-save", QIcon(":/images/save.png"));
@@ -101,29 +101,31 @@ void MainWindow::createActions()
     saveAct->setShortcuts(QKeySequence::Save);
     saveAct->setStatusTip(tr("Save the document to disk"));
     connect(saveAct, &QAction::triggered, this, &MainWindow::save);
-    fileMenu->addAction(saveAct);
-    fileToolBar->addAction(saveAct);
+    caoMenu->addAction(saveAct);
+    caoToolBar->addAction(saveAct);
 
-    fileToolBar->addSeparator();
+    caoToolBar->addSeparator();
+
+    QToolBar *xmlToolBar = addToolBar(tr("XML"));
 
     const QIcon newxmlIcon = QIcon::fromTheme("document-new", QIcon(":/images/new.png"));
     QAction *newAct = new QAction(newxmlIcon, tr("&Open XML Editor"), this);
     newAct->setShortcuts(QKeySequence::New);
     newAct->setStatusTip(tr("Open XML Editor"));
     connect(newAct, &QAction::triggered, this, &MainWindow::newFile);
-    fileMenu->addAction(newAct);
-    fileToolBar->addAction(newAct);
+    caoMenu->addAction(newAct);
+    xmlToolBar->addAction(newAct);
 
     const QIcon saveAsIcon = QIcon::fromTheme("document-save-as");
-    QAction *saveAsAct = fileMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
+    QAction *saveAsAct = caoMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
     saveAsAct->setShortcuts(QKeySequence::SaveAs);
     saveAsAct->setStatusTip(tr("Save the document under a new name"));
 
 
-    fileMenu->addSeparator();
+    caoMenu->addSeparator();
 
     const QIcon exitIcon = QIcon::fromTheme("application-exit");
-    QAction *exitAct = fileMenu->addAction(exitIcon, tr("E&xit"), this, &QWidget::close);
+    QAction *exitAct = caoMenu->addAction(exitIcon, tr("E&xit"), this, &QWidget::close);
     exitAct->setShortcuts(QKeySequence::Quit);
 
     exitAct->setStatusTip(tr("Exit the application"));

@@ -8,7 +8,6 @@ XmlEditor::XmlEditor()
 
 {
     setCentralWidget(textEdit);
-
     createActions();
     createStatusBar();
 
@@ -22,7 +21,9 @@ XmlEditor::XmlEditor()
     connect(qApp, &QGuiApplication::commitDataRequest,
             this, &XmlEditor::commitData);
 #endif
+    textEdit->setPlainText("<!-- Default Settings-->\n<?xml version=\"1.0\"?>\n<conf>\n <ecm>\n  <mask>\n   <size>5</size>\n   <nb_mask>180</nb_mask>\n  </mask>\n  <range>\n   <tracking>8</tracking>\n  </range>\n  <contrast>\n   <edge_threshold>10000</edge_threshold>\n   <mu1>0.5</mu1>\n   <mu2>0.5</mu2>\n  </contrast>\n  <sample>\n   <step>4</step>\n  </sample>\n </ecm>\n <klt>\n  <mask_border>5</mask_border>\n  <max_features>300</max_features>\n  <window_size>5</window_size>\n  <quality>0.015</quality>\n  <min_distance>8</min_distance>\n  <harris>0.01</harris>\n  <size_block>3</size_block>\n  <pyramid_lvl>3</pyramid_lvl>\n </klt>\n <camera>\n  <u0>325.66776</u0>\n  <v0>243.69727</v0>\n  <px>839.21470</px>\n  <py>839.44555</py>\n </camera>\n <face>\n  <angle_appear>70</angle_appear>\n  <angle_disappear>80</angle_disappear>\n  <near_clipping>0.1</near_clipping>\n  <far_clipping>100</far_clipping>\n  <fov_clipping>1</fov_clipping>\n </face>\n</conf>");
 
+//    setWindowTitle(tr("XML Editor[*]"));
     setCurrentFile(QString());
     setUnifiedTitleAndToolBarOnMac(true);
 }
@@ -30,21 +31,21 @@ XmlEditor::XmlEditor()
 void XmlEditor::closeEvent(QCloseEvent *event)
 
 {
-    if (maybeSave()) {
+    if (maybeSave())
+    {
         writeSettings();
         event->accept();
-    } else {
-        event->ignore();
     }
+    else
+        event->ignore();
 }
 
 void XmlEditor::newFile()
 
 {
-    if (maybeSave()) {
+    if (maybeSave())
+    {
         textEdit->clear();
-
-//        textEdit->setPlainText(in.readAll());
         setCurrentFile(QString());
     }
 }
@@ -54,7 +55,8 @@ void XmlEditor::newFile()
 void XmlEditor::open()
 
 {
-    if (maybeSave()) {
+    if (maybeSave())
+    {
         QString fileName = QFileDialog::getOpenFileName(this);
         if (!fileName.isEmpty())
             loadFile(fileName);
@@ -66,11 +68,12 @@ void XmlEditor::open()
 bool XmlEditor::save()
 
 {
-    if (curFile.isEmpty()) {
+    if (curFile.isEmpty())
+    {
         return saveAs();
-    } else {
-        return saveFile(curFile);
     }
+    else
+        return saveFile(curFile);
 }
 
 
@@ -236,7 +239,8 @@ bool XmlEditor::maybeSave()
                                tr("The document has been modified.\n"
                                   "Do you want to save your changes?"),
                                QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-    switch (ret) {
+    switch (ret)
+    {
     case QMessageBox::Save:
         return save();
     case QMessageBox::Cancel:
@@ -254,7 +258,8 @@ void XmlEditor::loadFile(const QString &fileName)
 {
     qInfo() << fileName;
     QFile file(fileName);
-    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+    if (!file.open(QFile::ReadOnly | QFile::Text))
+    {
         QMessageBox::warning(this, tr("Application"),
                              tr("Cannot read file %1:\n%2.")
                              .arg(QDir::toNativeSeparators(fileName), file.errorString()));
@@ -280,7 +285,8 @@ bool XmlEditor::saveFile(const QString &fileName)
 
 {
     QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+    if (!file.open(QFile::WriteOnly | QFile::Text))
+    {
         QMessageBox::warning(this, tr("Application"),
                              tr("Cannot write file %1:\n%2.")
                              .arg(QDir::toNativeSeparators(fileName),
@@ -328,11 +334,13 @@ QString XmlEditor::strippedName(const QString &fullFileName)
 #ifndef QT_NO_SESSIONMANAGER
 void XmlEditor::commitData(QSessionManager &manager)
 {
-    if (manager.allowsInteraction()) {
+    if (manager.allowsInteraction())
+    {
         if (!maybeSave())
             manager.cancel();
-    } else {
-        // Non-interactive: save without asking
+    }
+    else
+    {
         if (textEdit->document()->isModified())
             save();
     }
