@@ -12,12 +12,17 @@
 #include <QFileDialog>
 #include <QMaterial>
 #include <QEffect>
+#include <QInputDialog>
 #include <QTechnique>
 #include <QRenderPass>
 #include <QShaderProgram>
+#include <QFormLayout>
+#include <QLabel>
+#include <QDialogButtonBox>
 
-SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
+SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget)
     : m_rootEntity(rootEntity)
+    , m_parentWidget(parentWidget)
     , m_facePickers(nullptr)
     , m_caoEntity(nullptr)
     , m_circleEntity(nullptr)
@@ -389,8 +394,44 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())
         {
-            qInfo()  << pressedEntity->objectName() << " STATE" ;
-            pressedEntity->setEnabled(false);
+            QDialog dialog(m_parentWidget);
+            QFormLayout form(&dialog);
+
+            form.addRow(new QLabel("LOD parameters"));
+
+            QList<QLineEdit *> fields;
+
+            QLineEdit *lineEdit1 = new QLineEdit(&dialog);
+            form.addRow(QString("name "), lineEdit1);
+            fields << lineEdit1;
+
+            QLineEdit *lineEdit2 = new QLineEdit(&dialog);
+            form.addRow(QString("useLod "), lineEdit2);
+            fields << lineEdit2;
+
+            QLineEdit *lineEdit3 = new QLineEdit(&dialog);
+            form.addRow(QString("minLineLengthThreshold "), lineEdit3);
+            fields << lineEdit3;
+
+            QLineEdit *lineEdit4 = new QLineEdit(&dialog);
+            form.addRow(QString("minPolygonAreaThreshold "), lineEdit4);
+            fields << lineEdit4;
+
+            QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                                       Qt::Horizontal, &dialog);
+            form.addRow(&buttonBox);
+            QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+            QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+            if (dialog.exec() == QDialog::Accepted)
+            {
+                // If user hits OK
+                foreach(QLineEdit * lineEdit, fields)
+                {
+                    qDebug() << lineEdit->text();
+                }
+            }
+
         }
     }
 }

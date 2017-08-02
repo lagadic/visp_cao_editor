@@ -101,7 +101,7 @@ int main(int argc, char **argv)
     view->setRootEntity(rootEntity);
 
     // Scenemodifier
-    mainWin.modifier = new SceneModifier(rootEntity);
+    mainWin.modifier = new SceneModifier(rootEntity, sceneContainer);
 
 
     if (!parser.positionalArguments().isEmpty())

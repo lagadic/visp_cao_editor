@@ -38,7 +38,7 @@ class SceneModifier : public QObject
     Q_OBJECT
 
 public:
-    explicit SceneModifier(Qt3DCore::QEntity *rootEntity);
+    explicit SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget);
     ~SceneModifier();
 
 public slots:
@@ -59,6 +59,7 @@ private:
     Qt3DCore::QEntity *m_cuboidEntity;
     Qt3DCore::QEntity *m_cylinderEntity;
     Qt3DCore::QEntity *m_circleEntity;
+    QWidget *m_parentWidget;
 
     QList<Qt3DRender::QObjectPicker *> *m_facePickers;
     Qt3DExtras::QPhongMaterial *caoMaterial;
