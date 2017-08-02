@@ -428,7 +428,8 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
                 // If user hits OK
                 foreach(QLineEdit * lineEdit, fields)
                 {
-                    qDebug() << lineEdit->text();
+                    if(!lineEdit->text().isEmpty())
+                        qInfo() << lineEdit->text();
                 }
             }
 
