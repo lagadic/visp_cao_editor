@@ -343,7 +343,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
             vertexMapData[i*6+3] = vertexRawData[index];vertexMapData[i*6+4] = vertexRawData[index+1];vertexMapData[i*6+5] = vertexRawData[index+2];
         }
 
-    if(!facelpointRawData.isEmpty() || !facelineRawData.isEmpty())
+    if(!facelpointRawData.isEmpty() || !facelineRawData.isEmpty() || lineRawData)
         this->createMesh(vertexMapData, vertexNum);
 }
 
