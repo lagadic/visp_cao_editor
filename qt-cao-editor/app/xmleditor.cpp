@@ -2,10 +2,8 @@
 
 #include "xmleditor.h"
 
-
 XmlEditor::XmlEditor()
     : textEdit(new QPlainTextEdit)
-
 {
     setCentralWidget(textEdit);
     createActions();
@@ -29,7 +27,6 @@ XmlEditor::XmlEditor()
 }
 
 void XmlEditor::closeEvent(QCloseEvent *event)
-
 {
     if (maybeSave())
     {
@@ -41,7 +38,6 @@ void XmlEditor::closeEvent(QCloseEvent *event)
 }
 
 void XmlEditor::newFile()
-
 {
     if (maybeSave())
     {
@@ -50,10 +46,7 @@ void XmlEditor::newFile()
     }
 }
 
-
-
 void XmlEditor::open()
-
 {
     if (maybeSave())
     {
@@ -63,10 +56,7 @@ void XmlEditor::open()
     }
 }
 
-
-
 bool XmlEditor::save()
-
 {
     if (curFile.isEmpty())
     {
@@ -76,10 +66,7 @@ bool XmlEditor::save()
         return saveFile(curFile);
 }
 
-
-
 bool XmlEditor::saveAs()
-
 {
     QFileDialog dialog(this);
     dialog.setWindowModality(Qt::WindowModal);
@@ -89,10 +76,7 @@ bool XmlEditor::saveAs()
     return saveFile(dialog.selectedFiles().first());
 }
 
-
-
 void XmlEditor::about()
-
 {
    QMessageBox::about(this, tr("About Application"),
             tr("The <b>Application</b> example demonstrates how to "
@@ -100,20 +84,13 @@ void XmlEditor::about()
                "toolbars, and a status bar."));
 }
 
-
-
 void XmlEditor::documentWasModified()
-
 {
     setWindowModified(textEdit->document()->isModified());
 }
 
-
-
 void XmlEditor::createActions()
-
 {
-
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     const QIcon newIcon = QIcon::fromTheme("document-new", QIcon(":/images/new.png"));
     QAction *newAct = new QAction(newIcon, tr("&New"), this);
@@ -122,14 +99,12 @@ void XmlEditor::createActions()
     connect(newAct, &QAction::triggered, this, &XmlEditor::newFile);
     fileMenu->addAction(newAct);
 
-
     const QIcon openIcon = QIcon::fromTheme("document-open", QIcon(":/images/open.png"));
     QAction *openAct = new QAction(openIcon, tr("&Open..."), this);
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Open an existing file"));
     connect(openAct, &QAction::triggered, this, &XmlEditor::open);
     fileMenu->addAction(openAct);
-
 
     const QIcon saveIcon = QIcon::fromTheme("document-save", QIcon(":/images/save.png"));
     QAction *saveAct = new QAction(saveIcon, tr("&Save"), this);
@@ -183,7 +158,6 @@ void XmlEditor::createActions()
 
 #endif
 
-
 #ifndef QT_NO_CLIPBOARD
     cutAct->setEnabled(false);
 
@@ -193,18 +167,12 @@ void XmlEditor::createActions()
 #endif
 }
 
-
-
 void XmlEditor::createStatusBar()
-
 {
     statusBar()->showMessage(tr("Ready"));
 }
 
-
-
 void XmlEditor::readSettings()
-
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     const QByteArray geometry = settings.value("geometry", QByteArray()).toByteArray();
@@ -218,19 +186,13 @@ void XmlEditor::readSettings()
     }
 }
 
-
-
 void XmlEditor::writeSettings()
-
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.setValue("geometry", saveGeometry());
 }
 
-
-
 bool XmlEditor::maybeSave()
-
 {
     if (!textEdit->document()->isModified())
         return true;
@@ -251,10 +213,7 @@ bool XmlEditor::maybeSave()
     return true;
 }
 
-
-
 void XmlEditor::loadFile(const QString &fileName)
-
 {
     qInfo() << fileName;
     QFile file(fileName);
@@ -279,10 +238,7 @@ void XmlEditor::loadFile(const QString &fileName)
     statusBar()->showMessage(tr("File loaded"), 2000);
 }
 
-
-
 bool XmlEditor::saveFile(const QString &fileName)
-
 {
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text))
@@ -308,10 +264,7 @@ bool XmlEditor::saveFile(const QString &fileName)
     return true;
 }
 
-
-
 void XmlEditor::setCurrentFile(const QString &fileName)
-
 {
     curFile = fileName;
     textEdit->document()->setModified(false);
@@ -323,10 +276,7 @@ void XmlEditor::setCurrentFile(const QString &fileName)
     setWindowFilePath(shownName);
 }
 
-
-
 QString XmlEditor::strippedName(const QString &fullFileName)
-
 {
     return QFileInfo(fullFileName).fileName();
 }

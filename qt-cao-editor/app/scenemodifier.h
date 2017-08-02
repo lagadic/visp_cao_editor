@@ -48,9 +48,9 @@ public slots:
 
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
-    void createMesh(float* vertexMapData,int vertexNum);
     void createCylinder(QVector3D axis_1, QVector3D axis_2, float radius);
     void createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center, float radius);
+    void createLines(QVector3D v0, QVector3D v1, int index, bool axis);
     int primitiveType(QString &type);
 
 private:

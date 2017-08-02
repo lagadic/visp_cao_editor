@@ -24,97 +24,9 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
     , m_cylinderEntity(nullptr)
 {
     // World Axis
-    Qt3DRender::QGeometryRenderer *line_mesh = new Qt3DRender::QGeometryRenderer();
-    Qt3DRender::QGeometry *geometry = new Qt3DRender::QGeometry(line_mesh);
-
-    Qt3DRender::QBuffer *vertexDataBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer, geometry);
-    Qt3DRender::QBuffer *indexDataBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::IndexBuffer, geometry);
-
-    QByteArray vertexBufferData;
-    vertexBufferData.resize(6 * (3 + 3) * sizeof(float));
-
-    QVector<QVector3D> vertices = QVector<QVector3D>()
-       << QVector3D (-100000.0f, 0.0f, 0.0f) << QVector3D (1.0f, 0.0f, 0.0f)
-       << QVector3D (100000.0f, 0.0f, 0.0f)  << QVector3D (1.0f, 0.0f, 0.0f)
-       << QVector3D (0.0f, -100000.0f, 0.0f) << QVector3D (0.0f, 1.0f, 0.0f)
-       << QVector3D (0.0f, 100000.0f, 0.0f)  << QVector3D (0.0f, 1.0f, 0.0f)
-       << QVector3D (0.0f, 0.0f, -100000.0f) << QVector3D (0.0f, 0.0f, 1.0f)
-       << QVector3D (0.0f, 0.0f, 100000.0f)  << QVector3D (0.0f, 0.0f, 1.0f);
-
-    float *rawVertexArray = reinterpret_cast<float *>(vertexBufferData.data());
-    int idx = 0;
-
-    Q_FOREACH (const QVector3D &v, vertices) {
-    rawVertexArray[idx++] = v.x();
-    rawVertexArray[idx++] = v.y();
-    rawVertexArray[idx++] = v.z();
-    }
-
-    QByteArray indexBufferData;
-    indexBufferData.resize(6 * 3 * sizeof(ushort));
-    ushort *rawIndexArray = reinterpret_cast<ushort *>(indexBufferData.data());
-
-    // X-axis
-    rawIndexArray[0] = 0;
-    rawIndexArray[1] = 1;
-    // Y-axis
-    rawIndexArray[2] = 2;
-    rawIndexArray[3] = 3;
-    // Z-axis
-    rawIndexArray[4] = 4;
-    rawIndexArray[5] = 5;
-
-    vertexDataBuffer->setData(vertexBufferData);
-    indexDataBuffer->setData(indexBufferData);
-
-    // Attributes
-    Qt3DRender::QAttribute *positionAttribute = new Qt3DRender::QAttribute();
-    positionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
-    positionAttribute->setBuffer(vertexDataBuffer);
-    positionAttribute->setDataType(Qt3DRender::QAttribute::Float);
-    positionAttribute->setDataSize(3);
-    positionAttribute->setByteOffset(0);
-    positionAttribute->setByteStride(6 * sizeof(float));
-    positionAttribute->setCount(6);
-    positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
-
-    Qt3DRender::QAttribute *colorAttribute = new Qt3DRender::QAttribute();
-    colorAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
-    colorAttribute->setBuffer(vertexDataBuffer);
-    colorAttribute->setDataType(Qt3DRender::QAttribute::Float);
-    colorAttribute->setDataSize(3);
-    colorAttribute->setByteOffset(3 * sizeof(float));
-    colorAttribute->setByteStride(6 * sizeof(float));
-    colorAttribute->setCount(6);
-    colorAttribute->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
-
-    Qt3DRender::QAttribute *indexAttribute = new Qt3DRender::QAttribute();
-    indexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
-    indexAttribute->setBuffer(indexDataBuffer);
-    indexAttribute->setDataType(Qt3DRender::QAttribute::UnsignedShort);
-    indexAttribute->setDataSize(1);
-    indexAttribute->setByteOffset(0);
-    indexAttribute->setByteStride(0);
-    indexAttribute->setCount(6);
-
-    geometry->addAttribute(positionAttribute);
-    geometry->addAttribute(colorAttribute);
-    geometry->addAttribute(indexAttribute);
-
-    line_mesh->setInstanceCount(1);
-    line_mesh->setIndexOffset(0);
-    line_mesh->setFirstInstance(0);
-    line_mesh->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
-    line_mesh->setGeometry(geometry);
-    line_mesh->setVertexCount(6);
-
-    // Material
-    Qt3DRender::QMaterial *material = new Qt3DExtras::QPerVertexColorMaterial(m_rootEntity);
-
-    // Axis Entity
-    Qt3DCore::QEntity *m_axisEntity = new Qt3DCore::QEntity(m_rootEntity);
-    m_axisEntity->addComponent(line_mesh);
-    m_axisEntity->addComponent(material);
+    this->createLines(QVector3D(-100000.0f, 0.0f, 0.0f), QVector3D(100000.0f, 0.0f, 0.0f), 0, true);
+    this->createLines(QVector3D(0.0f, -100000.0f, 0.0f), QVector3D(0.0f, 100000.0f, 0.0f), 1, true);
+    this->createLines(QVector3D(0.0f, 0.0f, -100000.0f), QVector3D(0.0f, 0.0f, 100000.0f), 2, true);
 
     // Cuboid shape data
     Qt3DExtras::QCuboidMesh *cuboid = new Qt3DExtras::QCuboidMesh();
@@ -167,9 +79,9 @@ void SceneModifier::parse3DFile(QTextStream &input)
     QString m_template =  "";
     int idx = 0;
     float* vertexRawData;
-    int* lineRawData;
+    QList<QVector2D> lineRawData;
     QList<int> facelineRawData;
-    QList<int> facelpointRawData;
+    QList<QVector2D> facelpointRawData;
     int vertexNum = 0;
     int lineNum = 0;
     int facelineNum = 0;
@@ -225,15 +137,14 @@ void SceneModifier::parse3DFile(QTextStream &input)
         else if(m_template == "3D_LNS")
         {
             data = fields[0].split(" ");
-            if(data.count() == 1)
+            if(data.count() == 2)
             {
-                idx = 0;
-                lineNum = data[0].toInt()*2;
-                lineRawData = new int[lineNum];
-            }
-            else if(data.count() >= 2)
-            {
-                lineRawData[idx++] = data[0].toInt();lineRawData[idx++] = data[1].toInt();
+                QVector2D line1(data[0].toInt(), data[1].toInt()); QVector2D line2(data[1].toInt(), data[0].toInt());
+                if(!lineRawData.contains(line1) && !lineRawData.contains(line2))
+                {
+                    lineRawData.append(line1);
+                    this->createLines(vertices[line1[0]], vertices[line1[1]], lineRawData.length(), false);
+                }
             }
         }
 
@@ -264,19 +175,28 @@ void SceneModifier::parse3DFile(QTextStream &input)
             else if(data.count() > 3)
             {
                 facepointNum += data[0].toInt();
-                for(int i=1;i<=data[0].toInt();i++)
-                    facelpointRawData.append(data[i].toInt());
+                for(int i=1;i<data[0].toInt();i++)
+                {
+                    QVector2D line1(data[i].toInt(), data[i+1].toInt()); QVector2D line2(data[i+1].toInt(), data[i].toInt());
+                    if(!facelpointRawData.contains(line1) && !facelpointRawData.contains(line2))
+                    {
+                        facelpointRawData.append(line1);
+                        this->createLines(vertices[line1[0]], vertices[line1[1]], facelpointRawData.length(), false);
+                    }
+                }
+                QVector2D line1(data[data[0].toInt()].toInt(), data[1].toInt()); QVector2D line2(data[1].toInt(), data[data[0].toInt()].toInt());
+                if(!facelpointRawData.contains(line1) && !facelpointRawData.contains(line2))
+                {
+                    facelpointRawData.append(line1);
+                    this->createLines(vertices[line1[0]], vertices[line1[1]], facelpointRawData.length(), false);
+                }
             }
         }
 
         else if(m_template == "3D_CYL")
         {
             data = fields[0].split(" ");
-            if(data.count() == 1)
-            {
-                idx = 0;
-            }
-            else if(data.count() == 3)
+            if(data.count() == 3)
             {
                 int indx1 = data[0].toInt()*3, indx2 = data[1].toInt()*3;
                 QVector3D axis_1(vertexRawData[indx1], vertexRawData[indx1+1], vertexRawData[indx1+2]);
@@ -288,11 +208,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
         else if(m_template == "3D_CIR")
         {
             data = fields[0].split(" ");
-            if(data.count() == 1)
-            {
-                idx = 0;
-            }
-            else if(data.count() == 4)
+            if(data.count() == 4)
             {
                 int indx1 = data[2].toInt()*3, indx2 = data[3].toInt()*3, indx3 = data[1].toInt()*3;
                 QVector3D circum_1(vertexRawData[indx1], vertexRawData[indx1+1], vertexRawData[indx1+2]);
@@ -302,67 +218,44 @@ void SceneModifier::parse3DFile(QTextStream &input)
             }
         }
     }
-
-    float* vertexMapData;
-    vertexMapData = (facelpointRawData.isEmpty() ? (facelineRawData.isEmpty() ?
-                                    (lineRawData ? new float[lineNum*3] : vertexRawData) : new float[facelineNum*6])
-                                 : new float[facepointNum*3]);
-    vertexNum = (facelpointRawData.isEmpty() ?
-                     (facelineRawData.isEmpty() ?
-                          (lineRawData ?
-                               lineNum*3 : vertexNum) : facelineNum*6): facepointNum*3);
-
-//#ifndef (facelpointRawData)
-//    qInfo() << "facepoint";
-//#endif
-    qInfo() << vertexNum;
-    if(!facelpointRawData.isEmpty())
-        for(int i = 0; i < facepointNum; i++)
-        {
-            int index = facelpointRawData[i]*3;
-            vertexMapData[i*3] = vertexRawData[index];
-            vertexMapData[i*3+1] = vertexRawData[index+1];
-            vertexMapData[i*3+2] = vertexRawData[index+2];
-        }
-
-    else if(lineRawData && facelineRawData.isEmpty())
-        for(int i = 0; i < lineNum; i++)
-        {
-            int index = lineRawData[i]*3;
-            vertexMapData[i*3] = vertexRawData[index];
-            vertexMapData[i*3+1] = vertexRawData[index+1];
-            vertexMapData[i*3+2] = vertexRawData[index+2];
-        }
-
-    else
-        for(int i = 0; i < facelineNum; i++)
-        {
-            int index = lineRawData[facelineRawData[i]*2]*3;
-            vertexMapData[i*6] = vertexRawData[index];vertexMapData[i*6+1] = vertexRawData[index+1];vertexMapData[i*6+2] = vertexRawData[index+2];
-            index = lineRawData[facelineRawData[i]*2+1]*3;
-            vertexMapData[i*6+3] = vertexRawData[index];vertexMapData[i*6+4] = vertexRawData[index+1];vertexMapData[i*6+5] = vertexRawData[index+2];
-        }
-
-    if(!facelpointRawData.isEmpty() || !facelineRawData.isEmpty() || lineRawData)
-        this->createMesh(vertexMapData, vertexNum);
 }
 
-void SceneModifier::createMesh(float* vertexMapData,int vertexNum)
+void SceneModifier::createLines(QVector3D v0, QVector3D v1, int index, bool axis)
 {
-
-    // Mesh Creation
-    meshRenderer = new Qt3DRender::QGeometryRenderer;
-    geometry = new Qt3DRender::QGeometry(meshRenderer);
+    Qt3DRender::QGeometryRenderer *line_mesh = new Qt3DRender::QGeometryRenderer();
+    Qt3DRender::QGeometry *geometry = new Qt3DRender::QGeometry(line_mesh);
 
     Qt3DRender::QBuffer *vertexDataBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer, geometry);
+    Qt3DRender::QBuffer *indexDataBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::IndexBuffer, geometry);
 
-    QByteArray ba1;
-    int bufferSize = vertexNum * sizeof(float);
-    ba1.resize(bufferSize);
-    memcpy(ba1.data(), reinterpret_cast<const char*>(vertexMapData), bufferSize);
-    vertexDataBuffer->setData(ba1);
+    QByteArray vertexBufferData;
+    vertexBufferData.resize(2 * (3 + 3) * sizeof(float));
 
-    int stride = 3 * sizeof(float);
+
+    QVector<QVector3D> vertices = (!axis ? QVector<QVector3D>() << v0 << QVector3D (0.5f, 0.0f, 0.5f) << v1  << QVector3D (0.5f, 0.0f, 0.5f)
+                                         : (index==0 ? QVector<QVector3D>() << v0 << QVector3D (1.0f, 0.0f, 0.0f) << v1  << QVector3D (1.0f, 0.0f, 0.0f)
+                                                      : (index==1 ? QVector<QVector3D>() << v0 << QVector3D (0.0f, 1.0f, 0.0f) << v1  << QVector3D (0.0f, 1.0f, 0.0f)
+                                                                  : (index==2 ? QVector<QVector3D>() << v0 << QVector3D (0.0f, 0.0f, 1.0f) << v1  << QVector3D (0.0f, 0.0f, 1.0f)
+                                                                              : QVector<QVector3D>() << v0 << QVector3D (0.0f, 1.0f, 1.0f) << v1  << QVector3D (0.0f, 1.0f, 1.0f)))));
+
+    float *rawVertexArray = reinterpret_cast<float *>(vertexBufferData.data());
+    int idx = 0;
+
+    Q_FOREACH (const QVector3D &v, vertices) {
+    rawVertexArray[idx++] = v.x();
+    rawVertexArray[idx++] = v.y();
+    rawVertexArray[idx++] = v.z();
+    }
+
+    QByteArray indexBufferData;
+    indexBufferData.resize(2 * 3 * sizeof(ushort));
+    ushort *rawIndexArray = reinterpret_cast<ushort *>(indexBufferData.data());
+
+    rawIndexArray[0] = 0;
+    rawIndexArray[1] = 1;
+
+    vertexDataBuffer->setData(vertexBufferData);
+    indexDataBuffer->setData(indexBufferData);
 
     // Attributes
     Qt3DRender::QAttribute *positionAttribute = new Qt3DRender::QAttribute();
@@ -371,31 +264,55 @@ void SceneModifier::createMesh(float* vertexMapData,int vertexNum)
     positionAttribute->setDataType(Qt3DRender::QAttribute::Float);
     positionAttribute->setDataSize(3);
     positionAttribute->setByteOffset(0);
-    positionAttribute->setByteStride(stride);
-    positionAttribute->setCount(vertexNum);
+    positionAttribute->setByteStride(6 * sizeof(float));
+    positionAttribute->setCount(2);
     positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
 
+    Qt3DRender::QAttribute *colorAttribute = new Qt3DRender::QAttribute();
+    colorAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    colorAttribute->setBuffer(vertexDataBuffer);
+    colorAttribute->setDataType(Qt3DRender::QAttribute::Float);
+    colorAttribute->setDataSize(3);
+    colorAttribute->setByteOffset(3 * sizeof(float));
+    colorAttribute->setByteStride(6 * sizeof(float));
+    colorAttribute->setCount(2);
+    colorAttribute->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
+
+    Qt3DRender::QAttribute *indexAttribute = new Qt3DRender::QAttribute();
+    indexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+    indexAttribute->setBuffer(indexDataBuffer);
+    indexAttribute->setDataType(Qt3DRender::QAttribute::UnsignedShort);
+    indexAttribute->setDataSize(1);
+    indexAttribute->setByteOffset(0);
+    indexAttribute->setByteStride(0);
+    indexAttribute->setCount(2);
+
     geometry->addAttribute(positionAttribute);
+    geometry->addAttribute(colorAttribute);
+    geometry->addAttribute(indexAttribute);
 
-    meshRenderer->setInstanceCount(1);
-    meshRenderer->setIndexOffset(0);
-    meshRenderer->setFirstInstance(0);
-    meshRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
-    meshRenderer->setGeometry(geometry);
-    meshRenderer->setVertexCount(vertexNum/3);
+    line_mesh->setInstanceCount(1);
+    line_mesh->setIndexOffset(0);
+    line_mesh->setFirstInstance(0);
+    line_mesh->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
+    line_mesh->setGeometry(geometry);
+    line_mesh->setVertexCount(2);
 
-    Qt3DCore::QEntity *m_caoEntity = new Qt3DCore::QEntity(m_rootEntity);
+    // Material
+    Qt3DRender::QMaterial *material = new Qt3DExtras::QPerVertexColorMaterial(m_rootEntity);
 
-    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_caoEntity);
-    picker->setHoverEnabled(true);
-    picker->setObjectName(QStringLiteral("__internal object picker ") + m_caoEntity->objectName());
-    m_facePickers->append(picker);
+    // Line Entity
+    Qt3DCore::QEntity *m_lineEntity = new Qt3DCore::QEntity(m_rootEntity);
+    m_lineEntity->addComponent(line_mesh);
+    m_lineEntity->addComponent(material);
 
-    m_caoEntity->addComponent(meshRenderer);
-    m_caoEntity->addComponent(caoMaterial);
-    m_caoEntity->addComponent(m_facePickers->last());
-
-    connect(m_facePickers->last(), &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+    if(!axis)
+    {
+        Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_lineEntity);
+        m_lineEntity->setObjectName(QString::number(index));
+        m_lineEntity->addComponent(picker);
+        connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+    }
 }
 
 void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2, float radius)
@@ -437,7 +354,6 @@ void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2, float rad
 
 void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center, float radius)
 {
-
     Qt3DExtras::QTorusMesh *circle = new Qt3DExtras::QTorusMesh();
     circle->setRadius(radius);
     circle->setMinorRadius(radius/100);
@@ -473,9 +389,8 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())
         {
-           qInfo() << pressedEntity->isEnabled() << pressedEntity->objectName() << " STATE" ;
-//           pressedEntity->setEnabled(!pressedEntity->isEnabled());
-           caoMaterial->setDiffuse(QColor(200,100,12,255));
+            qInfo()  << pressedEntity->objectName() << " STATE" ;
+            pressedEntity->setEnabled(false);
         }
     }
 }
