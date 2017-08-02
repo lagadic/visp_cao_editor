@@ -11,3 +11,4 @@ HEADERS += \
     scenemodifier.h \
     xmleditor.h
 
+RESOURCES = app.qrc

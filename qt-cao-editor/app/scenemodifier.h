@@ -50,12 +50,16 @@ private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
     void createMesh(float* vertexMapData,int vertexNum);
     void createCylinder(QVector3D axis_1, QVector3D axis_2, float radius);
+    void createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center, float radius);
     int primitiveType(QString &type);
 
 private:
     Qt3DCore::QEntity *m_rootEntity;
     Qt3DCore::QEntity *m_caoEntity;
     Qt3DCore::QEntity *m_cuboidEntity;
+    Qt3DCore::QEntity *m_cylinderEntity;
+    Qt3DCore::QEntity *m_circleEntity;
+
     QList<Qt3DRender::QObjectPicker *> *m_facePickers;
     Qt3DExtras::QPhongMaterial *caoMaterial;
     Qt3DRender::QGeometryRenderer *meshRenderer;

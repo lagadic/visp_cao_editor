@@ -87,8 +87,7 @@ void MainWindow::createActions()
     QToolBar *caoToolBar = addToolBar(tr("File"));
 
 
-    const QIcon openIcon = QIcon::fromTheme("document-open", QIcon(":/images/open.png"));
-    QAction *openAct = new QAction(openIcon, tr("&Import ViSP .cao"), this);
+    QAction *openAct = new QAction(QIcon(":/images/icon_import_cao.png"), tr("&Import ViSP .cao"), this);
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Import a .cao file"));
     connect(openAct, &QAction::triggered, this, &MainWindow::open);
@@ -96,8 +95,7 @@ void MainWindow::createActions()
     caoToolBar->addAction(openAct);
 
 
-    const QIcon saveIcon = QIcon::fromTheme("document-save", QIcon(":/images/save.png"));
-    QAction *saveAct = new QAction(saveIcon, tr("&Save"), this);
+    QAction *saveAct = new QAction(QIcon::fromTheme("document-save", QIcon(":/images/save.png")), tr("&Save"), this);
     saveAct->setShortcuts(QKeySequence::Save);
     saveAct->setStatusTip(tr("Save the document to disk"));
     connect(saveAct, &QAction::triggered, this, &MainWindow::save);
@@ -108,8 +106,8 @@ void MainWindow::createActions()
 
     QToolBar *xmlToolBar = addToolBar(tr("XML"));
 
-    const QIcon newxmlIcon = QIcon::fromTheme("document-new", QIcon(":/images/new.png"));
-    QAction *newAct = new QAction(newxmlIcon, tr("&Open XML Editor"), this);
+
+    QAction *newAct = new QAction(QIcon(":/images/icon_xml.png"), tr("&Open XML Editor"), this);
     newAct->setShortcuts(QKeySequence::New);
     newAct->setStatusTip(tr("Open XML Editor"));
     connect(newAct, &QAction::triggered, this, &MainWindow::newFile);
@@ -251,7 +249,7 @@ void MainWindow::setCurrentFile(const QString &fileName)
     QString shownName = curFile;
     if (curFile.isEmpty())
         shownName = "untitled.cao";
-    setWindowFilePath(shownName);
+    setWindowFilePath("ViSP CAO Editor - " + shownName);
 }
 
 

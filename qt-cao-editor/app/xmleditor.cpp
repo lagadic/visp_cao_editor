@@ -181,7 +181,7 @@ void XmlEditor::createActions()
 
     menuBar()->addSeparator();
 
-#endif // !QT_NO_CLIPBOARD
+#endif
 
 
 #ifndef QT_NO_CLIPBOARD
@@ -190,7 +190,7 @@ void XmlEditor::createActions()
     copyAct->setEnabled(false);
     connect(textEdit, &QPlainTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
     connect(textEdit, &QPlainTextEdit::copyAvailable, copyAct, &QAction::setEnabled);
-#endif // !QT_NO_CLIPBOARD
+#endif
 }
 
 

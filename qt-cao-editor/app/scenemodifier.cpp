@@ -16,13 +16,14 @@
 #include <QRenderPass>
 #include <QShaderProgram>
 
-# define M_PI 3.14159
-
 SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
     : m_rootEntity(rootEntity)
     , m_facePickers(nullptr)
     , m_caoEntity(nullptr)
+    , m_circleEntity(nullptr)
+    , m_cylinderEntity(nullptr)
 {
+    // World Axis
     Qt3DRender::QGeometryRenderer *line_mesh = new Qt3DRender::QGeometryRenderer();
     Qt3DRender::QGeometry *geometry = new Qt3DRender::QGeometry(line_mesh);
 
@@ -32,26 +33,13 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
     QByteArray vertexBufferData;
     vertexBufferData.resize(6 * (3 + 3) * sizeof(float));
 
-    // Vertices
-    QVector3D v0(-100000.0f, 0.0f, 0.0f);
-    QVector3D v1(100000.0f, 0.0f, 0.0f);
-    QVector3D v2(0.0f, -100000.0f, 0.0f);
-    QVector3D v3(0.0f, 100000.0f, 0.0f);
-    QVector3D v4(0.0f, 0.0f, -100000.0f);
-    QVector3D v5(0.0f, 0.0f, 100000.0f);
-
-    // Colors
-    QVector3D red(1.0f, 0.0f, 0.0f);
-    QVector3D green(0.0f, 1.0f, 0.0f);
-    QVector3D blue(0.0f, 0.0f, 1.0f);
-
     QVector<QVector3D> vertices = QVector<QVector3D>()
-       << v0 << red
-       << v1 << red
-       << v2 << green
-       << v3 << green
-       << v4 << blue
-       << v5 << blue;
+       << QVector3D (-100000.0f, 0.0f, 0.0f) << QVector3D (1.0f, 0.0f, 0.0f)
+       << QVector3D (100000.0f, 0.0f, 0.0f)  << QVector3D (1.0f, 0.0f, 0.0f)
+       << QVector3D (0.0f, -100000.0f, 0.0f) << QVector3D (0.0f, 1.0f, 0.0f)
+       << QVector3D (0.0f, 100000.0f, 0.0f)  << QVector3D (0.0f, 1.0f, 0.0f)
+       << QVector3D (0.0f, 0.0f, -100000.0f) << QVector3D (0.0f, 0.0f, 1.0f)
+       << QVector3D (0.0f, 0.0f, 100000.0f)  << QVector3D (0.0f, 0.0f, 1.0f);
 
     float *rawVertexArray = reinterpret_cast<float *>(vertexBufferData.data());
     int idx = 0;
@@ -123,15 +111,10 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
     // Material
     Qt3DRender::QMaterial *material = new Qt3DExtras::QPerVertexColorMaterial(m_rootEntity);
 
-    // Transform
-    Qt3DCore::QTransform *transform = new Qt3DCore::QTransform;
-
-    // Custom mesh TetraHedron
+    // Axis Entity
     Qt3DCore::QEntity *m_axisEntity = new Qt3DCore::QEntity(m_rootEntity);
-
     m_axisEntity->addComponent(line_mesh);
     m_axisEntity->addComponent(material);
-    m_axisEntity->addComponent(transform);
 
     // Cuboid shape data
     Qt3DExtras::QCuboidMesh *cuboid = new Qt3DExtras::QCuboidMesh();
@@ -143,15 +126,14 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity)
     cuboidTransform->setScale(1.0f);
     cuboidTransform->setTranslation(QVector3D(0.0f, 0.0f, 0.0f));
 
-    Qt3DExtras::QPhongMaterial *cuboidMaterial = new Qt3DExtras::QPhongMaterial();
-    cuboidMaterial->setDiffuse(QColor(100,100,100,255));
+    caoMaterial = new Qt3DExtras::QPhongMaterial();
+    caoMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
 
     //Cuboid
     m_cuboidEntity = new Qt3DCore::QEntity(m_rootEntity);
     m_cuboidEntity->addComponent(cuboid);
-    m_cuboidEntity->addComponent(cuboidMaterial);
+    m_cuboidEntity->addComponent(caoMaterial);
     m_cuboidEntity->addComponent(cuboidTransform);
-//    m_cuboidEntity->setEnabled(false);
 }
 
 SceneModifier::~SceneModifier()
@@ -159,11 +141,18 @@ SceneModifier::~SceneModifier()
     delete m_facePickers;
     delete m_cuboidEntity;
     delete m_caoEntity;
+    delete m_cylinderEntity;
+    delete m_circleEntity;
 }
 
 int SceneModifier::primitiveType(QString &type)
 {
-    const QStringList t_defined = {"3DPoints","3DLines","Facesfrom3Dlines","Facesfrom3Dpoints","3Dcylinders","3Dcircles"};
+    const QStringList t_defined = {"3DPoints",
+                                   "3DLines",
+                                   "Facesfrom3Dlines",
+                                   "Facesfrom3Dpoints",
+                                   "3Dcylinders",
+                                   "3Dcircles"};
     for(int i=1;i<=6;i++)
         if(!type.compare(t_defined[i-1], Qt::CaseInsensitive))
             return i;
@@ -185,8 +174,8 @@ void SceneModifier::parse3DFile(QTextStream &input)
     int lineNum = 0;
     int facelineNum = 0;
     int facepointNum = 0;
-    int cylinderNum = 0;
     QList<QVector3D> vertices;
+    m_facePickers = new QList<Qt3DRender::QObjectPicker *>();
 
     while(!input.atEnd())
     {
@@ -206,9 +195,9 @@ void SceneModifier::parse3DFile(QTextStream &input)
                          break;
                 case 4 : m_template = "3D_F_PTS";
                          break;
-                case 5 : m_template = "3Dcylinders";
+                case 5 : m_template = "3D_CYL";
                          break;
-                case 6 : m_template = "3Dcircles";
+                case 6 : m_template = "3D_CIR";
                          break;
             }
         }
@@ -280,13 +269,12 @@ void SceneModifier::parse3DFile(QTextStream &input)
             }
         }
 
-        else if(m_template == "3Dcylinders")
+        else if(m_template == "3D_CYL")
         {
             data = fields[0].split(" ");
             if(data.count() == 1)
             {
                 idx = 0;
-                cylinderNum = 0;
             }
             else if(data.count() == 3)
             {
@@ -296,12 +284,38 @@ void SceneModifier::parse3DFile(QTextStream &input)
                 this->createCylinder(axis_1, axis_2, data[2].toFloat());
             }
         }
+
+        else if(m_template == "3D_CIR")
+        {
+            data = fields[0].split(" ");
+            if(data.count() == 1)
+            {
+                idx = 0;
+            }
+            else if(data.count() == 4)
+            {
+                int indx1 = data[2].toInt()*3, indx2 = data[3].toInt()*3, indx3 = data[1].toInt()*3;
+                QVector3D circum_1(vertexRawData[indx1], vertexRawData[indx1+1], vertexRawData[indx1+2]);
+                QVector3D circum_2(vertexRawData[indx2], vertexRawData[indx2+1], vertexRawData[indx2+2]);
+                QVector3D center(vertexRawData[indx3], vertexRawData[indx3+1], vertexRawData[indx3+2]);
+                this->createCircle(circum_1, circum_2, center, data[0].toFloat());
+            }
+        }
     }
 
     float* vertexMapData;
-    vertexMapData = (facelpointRawData.isEmpty() ? (facelineRawData.isEmpty() ? (lineRawData ? new float[lineNum*3] : vertexRawData) : new float[facelineNum*6]) : new float[facepointNum*3]);
-    vertexNum = (facelpointRawData.isEmpty() ? (facelineRawData.isEmpty() ? (lineRawData ? lineNum*3 : vertexNum) : facelineNum*6): facepointNum*3);
+    vertexMapData = (facelpointRawData.isEmpty() ? (facelineRawData.isEmpty() ?
+                                    (lineRawData ? new float[lineNum*3] : vertexRawData) : new float[facelineNum*6])
+                                 : new float[facepointNum*3]);
+    vertexNum = (facelpointRawData.isEmpty() ?
+                     (facelineRawData.isEmpty() ?
+                          (lineRawData ?
+                               lineNum*3 : vertexNum) : facelineNum*6): facepointNum*3);
 
+//#ifndef (facelpointRawData)
+//    qInfo() << "facepoint";
+//#endif
+    qInfo() << vertexNum;
     if(!facelpointRawData.isEmpty())
         for(int i = 0; i < facepointNum; i++)
         {
@@ -329,7 +343,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
             vertexMapData[i*6+3] = vertexRawData[index];vertexMapData[i*6+4] = vertexRawData[index+1];vertexMapData[i*6+5] = vertexRawData[index+2];
         }
 
-    if(!facelpointRawData.isEmpty() && !facelineRawData.isEmpty())
+    if(!facelpointRawData.isEmpty() || !facelineRawData.isEmpty())
         this->createMesh(vertexMapData, vertexNum);
 }
 
@@ -370,28 +384,18 @@ void SceneModifier::createMesh(float* vertexMapData,int vertexNum)
     meshRenderer->setGeometry(geometry);
     meshRenderer->setVertexCount(vertexNum/3);
 
-    // Mesh Transform
-    Qt3DCore::QTransform *caoTransform = new Qt3DCore::QTransform();
-    caoTransform->setScale(2.0f);
-//    caoTransform->setRotation(QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 1.0f, 0.0f), 25.0f));
-    caoTransform->setTranslation(QVector3D(0.0f, 0.0f, 0.0f));
-
-    caoMaterial = new Qt3DExtras::QPhongMaterial();
-    caoMaterial->setDiffuse(QColor(QRgb(0xbeb32b)));
-
     Qt3DCore::QEntity *m_caoEntity = new Qt3DCore::QEntity(m_rootEntity);
 
-    m_facePickers = new QList<Qt3DRender::QObjectPicker *>();
-    Qt3DRender::QObjectPicker *picker1 = new Qt3DRender::QObjectPicker(m_caoEntity);
-    picker1->setHoverEnabled(true);
-    picker1->setObjectName(QStringLiteral("__internal object picker ") + m_caoEntity->objectName());
-    m_facePickers->append(picker1);
+    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_caoEntity);
+    picker->setHoverEnabled(true);
+    picker->setObjectName(QStringLiteral("__internal object picker ") + m_caoEntity->objectName());
+    m_facePickers->append(picker);
+
     m_caoEntity->addComponent(meshRenderer);
     m_caoEntity->addComponent(caoMaterial);
-//    m_caoEntity->addComponent(caoTransform);
-    m_caoEntity->addComponent(m_facePickers->at(0));
-    m_caoEntity->setEnabled(true);
-    connect(m_facePickers->at(0), &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+    m_caoEntity->addComponent(m_facePickers->last());
+
+    connect(m_facePickers->last(), &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
 }
 
 void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2, float radius)
@@ -408,7 +412,6 @@ void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2, float rad
 
     // CylinderMesh Transform
     Qt3DCore::QTransform *cylinderTransform = new Qt3DCore::QTransform();
-
     cylinderTransform->setRotationX(qAcos(QVector3D::dotProduct(main_axis_norm,QVector3D(1.0f, 0.0f, 0.0f)))*180/M_PI);
     cylinderTransform->setRotationY(qAcos(QVector3D::dotProduct(main_axis_norm,QVector3D(0.0f, 1.0f, 0.0f)))*180/M_PI);
     cylinderTransform->setRotationZ(qAcos(QVector3D::dotProduct(main_axis_norm,QVector3D(0.0f, 0.0f, 1.0f)))*180/M_PI);
@@ -419,20 +422,43 @@ void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2, float rad
     //    cylinderTransform->setRotation(QQuaternion::fromAxisAndAngle(main_axis.normalized(),0.0f));
     cylinderTransform->setTranslation(mid_point);
 
-    Qt3DExtras::QPhongMaterial *cylinderMaterial = new Qt3DExtras::QPhongMaterial();
-    cylinderMaterial->setDiffuse(QColor(QRgb(0x928327)));
-
-    Qt3DCore::QEntity *m_cylinderEntity = new Qt3DCore::QEntity(m_rootEntity);
-
-//    Qt3DRender::QObjectPicker *picker2 = new Qt3DRender::QObjectPicker(m_cylinderEntity);
-//    picker2->setHoverEnabled(false);
-//    picker2->setObjectName(QStringLiteral("__internal object picker ") + m_cylinderEntity->objectName());
-//    m_facePickers->append(picker2);
-
+    m_cylinderEntity = new Qt3DCore::QEntity(m_rootEntity);
     m_cylinderEntity->addComponent(cylinder);
-    m_cylinderEntity->addComponent(cylinderMaterial);
+    m_cylinderEntity->addComponent(caoMaterial);
     m_cylinderEntity->addComponent(cylinderTransform);
-//    m_cylinderEntity->addComponent(m_facePickers->at(1));
+
+    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_cylinderEntity);
+    picker->setObjectName(QStringLiteral("__internal object picker ") + m_cylinderEntity->objectName());
+//    m_facePickers->append(picker);
+    m_cylinderEntity->addComponent(picker);
+
+    connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+}
+
+void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center, float radius)
+{
+
+    Qt3DExtras::QTorusMesh *circle = new Qt3DExtras::QTorusMesh();
+    circle->setRadius(radius);
+    circle->setMinorRadius(radius/100);
+    circle->setRings(100);
+    circle->setSlices(20);
+
+    // CircleMesh Transform
+    Qt3DCore::QTransform *circleTransform = new Qt3DCore::QTransform();
+    circleTransform->setTranslation(center);
+
+    m_circleEntity = new Qt3DCore::QEntity(m_rootEntity);
+
+    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_circleEntity);
+    picker->setObjectName(QStringLiteral("__internal object picker ") + m_circleEntity->objectName());
+
+    m_circleEntity->addComponent(circle);
+    m_circleEntity->addComponent(caoMaterial);
+    m_circleEntity->addComponent(circleTransform);
+    m_circleEntity->addComponent(picker);
+
+    connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
 }
 
 void SceneModifier::enableCaoMesh(bool enabled)
@@ -447,9 +473,9 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())
         {
-           qInfo() << pressedEntity->isEnabled() << " STATE" ;
-           pressedEntity->setEnabled(!pressedEntity->isEnabled());
-            caoMaterial->setDiffuse(QColor(200,100,12,255));
+           qInfo() << pressedEntity->isEnabled() << pressedEntity->objectName() << " STATE" ;
+//           pressedEntity->setEnabled(!pressedEntity->isEnabled());
+           caoMaterial->setDiffuse(QColor(200,100,12,255));
         }
     }
 }
