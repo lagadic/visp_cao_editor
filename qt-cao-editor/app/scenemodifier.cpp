@@ -29,9 +29,9 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     , m_cylinderEntity(nullptr)
 {
     // World Axis
-    this->createLines(QVector3D(-100000.0f, 0.0f, 0.0f), QVector3D(100000.0f, 0.0f, 0.0f), 0, true);
-    this->createLines(QVector3D(0.0f, -100000.0f, 0.0f), QVector3D(0.0f, 100000.0f, 0.0f), 1, true);
-    this->createLines(QVector3D(0.0f, 0.0f, -100000.0f), QVector3D(0.0f, 0.0f, 100000.0f), 2, true);
+    this->createLines(QVector3D(-100000.0f, 0.0f, 0.0f), QVector3D(100000.0f, 0.0f, 0.0f), 0, true, "");
+    this->createLines(QVector3D(0.0f, -100000.0f, 0.0f), QVector3D(0.0f, 100000.0f, 0.0f), 1, true, "");
+    this->createLines(QVector3D(0.0f, 0.0f, -100000.0f), QVector3D(0.0f, 0.0f, 100000.0f), 2, true, "");
 
     // Cuboid shape data
     Qt3DExtras::QCuboidMesh *cuboid = new Qt3DExtras::QCuboidMesh();
@@ -62,7 +62,7 @@ SceneModifier::~SceneModifier()
     delete m_circleEntity;
 }
 
-int SceneModifier::primitiveType(QString &type)
+int SceneModifier::primitiveType(const QString &type)
 {
     const QStringList t_defined = {"3DPoints",
                                    "3DLines",
@@ -70,7 +70,7 @@ int SceneModifier::primitiveType(QString &type)
                                    "Facesfrom3Dpoints",
                                    "3Dcylinders",
                                    "3Dcircles"};
-    for(int i=1;i<=6;i++)
+    for (unsigned int i=1; i<=6; i++)
         if(!type.compare(t_defined[i-1], Qt::CaseInsensitive))
             return i;
     return 0;
@@ -82,15 +82,9 @@ void SceneModifier::parse3DFile(QTextStream &input)
         m_cuboidEntity->setEnabled(false);
 
     QString m_template =  "";
-    int idx = 0;
-    float* vertexRawData;
     QList<QVector2D> lineRawData;
     QList<int> facelineRawData;
     QList<QVector2D> facelpointRawData;
-    int vertexNum = 0;
-    int lineNum = 0;
-    int facelineNum = 0;
-    int facepointNum = 0;
     QList<QVector3D> vertices;
     m_facePickers = new QList<Qt3DRender::QObjectPicker *>();
 
@@ -98,7 +92,6 @@ void SceneModifier::parse3DFile(QTextStream &input)
     {
         QString line = input.readLine();
         QStringList fields = line.split("#");
-        QStringList data = {};
         if(fields.count() == 2)
         {
             QString type = fields[1].replace(" ","");
@@ -122,110 +115,118 @@ void SceneModifier::parse3DFile(QTextStream &input)
         if(fields[0].isEmpty())
             continue;
 
-        if(m_template == "3D_PTS")
+        QStringList data = fields[0].split(" ");
+        unsigned int data_size = data.count();
+        QString lod_param = "+";
+
+        if(!m_template.compare("3D_PTS", Qt::CaseSensitive))
         {
-            data = fields[0].split(" ");
-            if(data.count() == 1)
+            if(data_size >= 3)
             {
-                idx = 0;
-                vertexNum = data[0].toInt() * 3;
-                vertexRawData = new float[vertexNum];
-            }
-            else if(data.count() >= 3)
-            {
-                vertexRawData[idx++] = data[0].toFloat();vertexRawData[idx++] = data[1].toFloat();vertexRawData[idx++] = data[2].toFloat();
                 QVector3D v(data[0].toFloat(),data[1].toFloat(),data[2].toFloat());
                 vertices.append(v);
             }
         }
 
-        else if(m_template == "3D_LNS")
+        else if(!m_template.compare("3D_LNS", Qt::CaseSensitive))
         {
-            data = fields[0].split(" ");
-            if(data.count() == 2)
+            if(data_size >= 2)
             {
+                for(unsigned int i=2; i<data_size; i++)
+                {
+                    if(!data[i].compare("#"))
+                        break;
+                    lod_param += data[i] + " ";
+                }
                 QVector2D line1(data[0].toInt(), data[1].toInt()); QVector2D line2(data[1].toInt(), data[0].toInt());
                 if(!lineRawData.contains(line1) && !lineRawData.contains(line2))
                 {
                     lineRawData.append(line1);
-                    this->createLines(vertices[line1[0]], vertices[line1[1]], lineRawData.length(), false);
+                    this->createLines(vertices[line1[0]], vertices[line1[1]], lineRawData.length(), false, lod_param);
                 }
             }
         }
 
-        else if(m_template == "3D_F_LNS")
+        else if(!m_template.compare("3D_F_LNS", Qt::CaseSensitive))
         {
-            data = fields[0].split(" ");
-            if(data.count() == 1)
+            if(data_size > 3)
             {
-                idx = 0;
-                facelineNum = 0;
-            }
-            else if(data.count() > 3)
-            {
-                facelineNum += data[0].toInt();
-                for(int i=1;i<=data[0].toInt();i++)
+                for(unsigned int i=1;i<=data[0].toInt();i++)
                     facelineRawData.append(data[i].toInt());
             }
         }
 
-        else if(m_template == "3D_F_PTS")
+        else if(!m_template.compare("3D_F_PTS", Qt::CaseSensitive))
         {
-            data = fields[0].split(" ");
-            if(data.count() == 1)
+            if(data_size > 3)
             {
-                idx = 0;
-                facepointNum = 0;
-            }
-            else if(data.count() > 3)
-            {
-                facepointNum += data[0].toInt();
-                for(int i=1;i<data[0].toInt();i++)
+                //QRegExp re(".*[a-z]");
+                unsigned int num_pts = data[0].toInt();
+                for(unsigned int i=num_pts+1;i<data_size;i++)
                 {
-                    QVector2D line1(data[i].toInt(), data[i+1].toInt()); QVector2D line2(data[i+1].toInt(), data[i].toInt());
+                    if(!data[i].compare("#"))
+                        break;
+
+                     lod_param += data[i] + " ";
+                }
+
+                for(unsigned int i=1;i<num_pts;i++)
+                {
+                    QVector2D line1(data[i].toInt(), data[i+1].toInt());
+                    QVector2D line2(data[i+1].toInt(), data[i].toInt());
                     if(!facelpointRawData.contains(line1) && !facelpointRawData.contains(line2))
                     {
                         facelpointRawData.append(line1);
-                        this->createLines(vertices[line1[0]], vertices[line1[1]], facelpointRawData.length(), false);
+                        this->createLines(vertices[line1[0]], vertices[line1[1]], facelpointRawData.length(), false, lod_param);
                     }
                 }
-                QVector2D line1(data[data[0].toInt()].toInt(), data[1].toInt()); QVector2D line2(data[1].toInt(), data[data[0].toInt()].toInt());
+                QVector2D line1(data[num_pts].toInt(), data[1].toInt());
+                QVector2D line2(data[1].toInt(), data[num_pts].toInt());
                 if(!facelpointRawData.contains(line1) && !facelpointRawData.contains(line2))
                 {
                     facelpointRawData.append(line1);
-                    this->createLines(vertices[line1[0]], vertices[line1[1]], facelpointRawData.length(), false);
+                    this->createLines(vertices[line1[0]], vertices[line1[1]], facelpointRawData.length(), false, lod_param);
                 }
             }
         }
 
-        else if(m_template == "3D_CYL")
+        else if(!m_template.compare("3D_CYL", Qt::CaseSensitive))
         {
-            data = fields[0].split(" ");
-            if(data.count() == 3)
+            if(data_size >= 3)
             {
-                int indx1 = data[0].toInt()*3, indx2 = data[1].toInt()*3;
-                QVector3D axis_1(vertexRawData[indx1], vertexRawData[indx1+1], vertexRawData[indx1+2]);
-                QVector3D axis_2(vertexRawData[indx2], vertexRawData[indx2+1], vertexRawData[indx2+2]);
-                this->createCylinder(axis_1, axis_2, data[2].toFloat());
+                for(unsigned int i=3; i<data_size; i++)
+                {
+                    if(!data[i].compare("#"))
+                        break;
+                    lod_param += data[i] + " ";
+                }
+                unsigned int idx1 = data[0].toInt();
+                unsigned int idx2 = data[1].toInt();
+                this->createCylinder(vertices[idx1], vertices[idx2], data[2].toFloat(), lod_param);
             }
         }
 
-        else if(m_template == "3D_CIR")
+        else if(!m_template.compare("3D_CIR", Qt::CaseSensitive))
         {
-            data = fields[0].split(" ");
-            if(data.count() == 4)
+            if(data_size == 4)
             {
-                int indx1 = data[2].toInt()*3, indx2 = data[3].toInt()*3, indx3 = data[1].toInt()*3;
-                QVector3D circum_1(vertexRawData[indx1], vertexRawData[indx1+1], vertexRawData[indx1+2]);
-                QVector3D circum_2(vertexRawData[indx2], vertexRawData[indx2+1], vertexRawData[indx2+2]);
-                QVector3D center(vertexRawData[indx3], vertexRawData[indx3+1], vertexRawData[indx3+2]);
-                this->createCircle(circum_1, circum_2, center, data[0].toFloat());
+                for(unsigned int i=3; i<data_size; i++)
+                {
+                    if(!data[i].compare("#"))
+                        break;
+                    lod_param += data[i] + " ";
+                }
+                unsigned int idx1 = data[2].toInt();
+                unsigned int idx2 = data[3].toInt();
+                unsigned int idx3 = data[1].toInt();
+                this->createCircle(vertices[idx1], vertices[idx2], vertices[idx3], data[0].toFloat(), lod_param);
             }
         }
     }
 }
 
-void SceneModifier::createLines(QVector3D v0, QVector3D v1, int index, bool axis)
+void SceneModifier::createLines(QVector3D v0, QVector3D v1,
+                                const unsigned int index, const bool axis, QString lod_param)
 {
     Qt3DRender::QGeometryRenderer *line_mesh = new Qt3DRender::QGeometryRenderer();
     Qt3DRender::QGeometry *geometry = new Qt3DRender::QGeometry(line_mesh);
@@ -314,13 +315,14 @@ void SceneModifier::createLines(QVector3D v0, QVector3D v1, int index, bool axis
     if(!axis)
     {
         Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_lineEntity);
-        m_lineEntity->setObjectName(QString::number(index));
+        m_lineEntity->setObjectName(QString::number(index)+lod_param);
         m_lineEntity->addComponent(picker);
         connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
     }
 }
 
-void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2, float radius)
+void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2,
+                                   float radius, QString load_param)
 {
     QVector3D main_axis(axis_1[0] - axis_2[0], axis_1[1] - axis_2[1], axis_1[2] - axis_2[2]);
     QVector3D mid_point((axis_1[0] + axis_2[0])/2, (axis_1[1] + axis_2[1])/2, (axis_1[2] + axis_2[2])/2);
@@ -351,13 +353,14 @@ void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2, float rad
 
     Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_cylinderEntity);
     picker->setObjectName(QStringLiteral("__internal object picker ") + m_cylinderEntity->objectName());
-//    m_facePickers->append(picker);
+    m_cylinderEntity->setObjectName(load_param);
     m_cylinderEntity->addComponent(picker);
 
     connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
 }
 
-void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center, float radius)
+void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center,
+                                 float radius, QString load_param)
 {
     Qt3DExtras::QTorusMesh *circle = new Qt3DExtras::QTorusMesh();
     circle->setRadius(radius);
@@ -378,6 +381,7 @@ void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector
     m_circleEntity->addComponent(caoMaterial);
     m_circleEntity->addComponent(circleTransform);
     m_circleEntity->addComponent(picker);
+    m_circleEntity->setObjectName(load_param);
 
     connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
 }
@@ -402,7 +406,7 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
             QList<QLineEdit *> fields;
 
             QLineEdit *lineEdit1 = new QLineEdit(&dialog);
-            form.addRow(QString("name "), lineEdit1);
+            form.addRow(QString("name "+pressedEntity->objectName()), lineEdit1);
             fields << lineEdit1;
 
             QLineEdit *lineEdit2 = new QLineEdit(&dialog);

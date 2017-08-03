@@ -48,10 +48,10 @@ public slots:
 
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
-    void createCylinder(QVector3D axis_1, QVector3D axis_2, float radius);
-    void createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center, float radius);
-    void createLines(QVector3D v0, QVector3D v1, int index, bool axis);
-    int primitiveType(QString &type);
+    void createCylinder(QVector3D axis_1, QVector3D axis_2, float radius, QString load_param);
+    void createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center, float radius, QString load_param);
+    void createLines(QVector3D v0, QVector3D v1, const unsigned int index, const bool axis, QString lod_param);
+    int primitiveType(const QString &type);
 
 private:
     Qt3DCore::QEntity *m_rootEntity;
