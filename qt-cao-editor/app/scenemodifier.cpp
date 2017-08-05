@@ -19,8 +19,8 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     : m_rootEntity(rootEntity)
     , m_parentWidget(parentWidget)
     , m_caoEntity(nullptr)
-    , m_circleEntity(nullptr)
     , m_cylinderEntity(nullptr)
+    , m_circleEntity(nullptr)
 {
     // World Axis
     this->createLines(QVector3D(-100000.0f, 0.0f, 0.0f), QVector3D(100000.0f, 0.0f, 0.0f), 0, true, ""); //X-axis
@@ -310,10 +310,8 @@ void SceneModifier::createLines(QVector3D v0, QVector3D v1,
 
     if(!axis)
     {
-        Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_lineEntity);
         m_lineEntity->setObjectName(QString::number(index)+lod_param);
-        m_lineEntity->addComponent(picker);
-        connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+        createObjectPickerForEntity(m_lineEntity);
     }
 }
 
@@ -347,11 +345,8 @@ void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2,
     m_cylinderEntity->addComponent(caoMaterial);
     m_cylinderEntity->addComponent(cylinderTransform);
 
-    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_cylinderEntity);
     m_cylinderEntity->setObjectName(QString::number(index)+load_param);
-    m_cylinderEntity->addComponent(picker);
-
-    connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+    createObjectPickerForEntity(m_cylinderEntity);
 }
 
 void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center,
@@ -369,15 +364,12 @@ void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector
 
     m_circleEntity = new Qt3DCore::QEntity(m_rootEntity);
 
-    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_circleEntity);
-
     m_circleEntity->addComponent(circle);
     m_circleEntity->addComponent(caoMaterial);
     m_circleEntity->addComponent(circleTransform);
-    m_circleEntity->addComponent(picker);
-    m_circleEntity->setObjectName(QString::number(index)+load_param);
 
-    connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+    m_circleEntity->setObjectName(QString::number(index)+load_param);
+    createObjectPickerForEntity(m_circleEntity);
 }
 
 void SceneModifier::enableCaoMesh(bool enabled)
@@ -385,9 +377,35 @@ void SceneModifier::enableCaoMesh(bool enabled)
     m_caoEntity->setEnabled(enabled);
 }
 
+Qt3DRender::QObjectPicker *SceneModifier::createObjectPickerForEntity(Qt3DCore::QEntity *entity)
+{
+    Qt3DRender::QObjectPicker *picker = nullptr;
+    picker = new Qt3DRender::QObjectPicker(entity);
+    picker->setHoverEnabled(false);
+    entity->addComponent(picker);
+    connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+    return picker;
+}
+
+bool SceneModifier::handleMousePress(QMouseEvent *event)
+{
+    m_mouseButton = event->button();
+    return false; // Never consume press event
+}
+
 void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
 {
-    if (event->button() == Qt::RightButton)
+//    switch (event->type())
+//    {
+//        case QEvent::MouseButtonPress:
+//            handleMousePress(static_cast<QMouseEvent *>(event));
+//            break;
+
+//        default:
+//            break;
+//    }
+
+    if (event->button() == Qt3DRender::QPickEvent::RightButton)
     {
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())

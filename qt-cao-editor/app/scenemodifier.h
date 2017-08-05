@@ -62,6 +62,8 @@ public:
     QList<QString>* cylinder_param;
     QList<QString>* circle_param;
 
+    Qt3DRender::QObjectPicker *createObjectPickerForEntity(Qt3DCore::QEntity *entity);
+
 public slots:
     void enableCaoMesh(bool enabled);
     void mouseControls(Qt3DInput::QKeyEvent *event);
@@ -80,15 +82,19 @@ private slots:
                           const unsigned int idx1, const unsigned int idx2);
 
 private:
+    bool handleMousePress(QMouseEvent *event);
+
     Qt3DCore::QEntity *m_rootEntity;
     Qt3DCore::QEntity *m_caoEntity;
     Qt3DCore::QEntity *m_cuboidEntity;
     Qt3DCore::QEntity *m_cylinderEntity;
     Qt3DCore::QEntity *m_circleEntity;
+    Qt3DExtras::QPhongMaterial *caoMaterial;
     QWidget *m_parentWidget;
 
+    Qt::MouseButton m_mouseButton;
+
     //QList<Qt3DRender::QObjectPicker *> *m_facePickers;
-    Qt3DExtras::QPhongMaterial *caoMaterial;
 
 };
 
