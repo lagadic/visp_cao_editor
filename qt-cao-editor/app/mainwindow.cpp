@@ -200,14 +200,6 @@ void MainWindow::loadCaoFile(const QString &fileName)
     modifier->parse3DFile(in);
 
     file.close();
-//    qInfo() << in.;
-// #ifndef QT_NO_CURSOR
-//     QApplication::setOverrideCursor(Qt::WaitCursor);
-// #endif
-//     textEdit->setPlainText(in.readAll());
-// #ifndef QT_NO_CURSOR
-//     QApplication::restoreOverrideCursor();
-// #endif
 
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("File loaded"), 2000);
@@ -225,13 +217,75 @@ bool MainWindow::saveFile(const QString &fileName)
     }
 
     QTextStream out(&file);
-// #ifndef QT_NO_CURSOR
-//     QApplication::setOverrideCursor(Qt::WaitCursor);
-// #endif
-//     out << textEdit->toPlainText();
-// #ifndef QT_NO_CURSOR
-//     QApplication::restoreOverrideCursor();
-// #endif
+
+    QStringList data;
+
+    // Header
+    out << "# ViSP Qt Editor CAO File\nV1\n";
+    // 3D points
+    out << "# 3D points\n" << modifier->vertices->length() << "\n";
+    for(int i=0;i<modifier->vertices->length();i++)
+    {
+        QVector3D v = modifier->vertices->at(i);
+        out << v.x() << " " << v.y() << " " << v.z() << "\n";
+    }
+
+    // 3D lines
+    out << "# 3D lines\n" << modifier->lineRawData->length() << "\n";
+    for(int i=0;i<modifier->lineRawData->length();i++)
+    {
+        QVector2D l = modifier->lineRawData->at(i);
+        data = modifier->line_param->at(i).split("+");
+        out << l.x() << " " << l.y() << " " << data[1] << "\n";
+    }
+
+    // Faces from 3D lines
+    out << "# Faces from 3D lines\n" << modifier->facelineRawData.length() << "\n";
+    for(int i=0;i<modifier->facelineRawData.length();i++)
+    {
+        QList<int> faceMap_list = modifier->facelineRawData.at(i);
+        QString faceMap_str;
+        for(int i=0; i<faceMap_list.length(); i++)
+        {
+            faceMap_str += QString::number(faceMap_list[i]);
+            faceMap_str += " " ;
+        }
+        data = modifier->faceline_param->at(i).split("+");
+        out << faceMap_str << data[1] << "\n";
+    }
+
+    // Faces from 3D points
+    out << "# Faces from 3D points\n" << modifier->facelpointRawData.length() << "\n";
+    for(int i=0;i<modifier->facelpointRawData.length();i++)
+    {
+        QList<int> faceMap_list = modifier->facelpointRawData.at(i);
+        QString faceMap_str;
+        for(int i=0; i<faceMap_list.length(); i++)
+        {
+            faceMap_str += QString::number(faceMap_list[i]);
+            faceMap_str += " " ;
+        }
+        data = modifier->facepoint_param->at(i).split("+");
+        out << faceMap_str << data[1] << "\n";
+    }
+
+    // 3D cylinders
+    out << "# 3D cylinders\n" << modifier->cylinder->length() << "\n";
+    for(int i=0;i<modifier->cylinder->length();i++)
+    {
+        QVector3D cyl = modifier->cylinder->at(i);
+        data = modifier->cylinder_param->at(i).split("+");
+        out << cyl.x() << " " << cyl.y() << " " << cyl.z() << " " << data[1] << "\n";
+    }
+
+    // 3D circles
+    out << "# 3D circles\n" << modifier->circle->length() << "\n";
+    for(int i=0;i<modifier->circle->length();i++)
+    {
+        QVector4D cir = modifier->circle->at(i);
+        data = modifier->circle_param->at(i).split("+");
+        out << cir.w() << " " << cir.x() << " " << cir.y() << " " << cir.z() << " " << data[1] << "\n";
+    }
 
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("File saved"), 2000);

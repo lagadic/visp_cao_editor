@@ -410,6 +410,26 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())
         {
+            QStringList lod_param = pressedEntity->objectName().split("+")[1].split(" ");
+            QString lod_name = (lod_param.length() >= 1 ? (lod_param[0].split("name=").length() == 2 ? lod_param[0].split("name=")[1] : "") : "");
+            QString lod_useLod = (lod_param.length() >= 2 ?
+                                      (lod_param[1].split("useLod=").length() == 2 ?
+                                          lod_param[1].split("useLod=")[1] :
+                                  (lod_param[0].split("useLod=").length() == 2 ?
+                                      lod_param[0].split("useLod=")[1] : "")) : "");
+
+            QString lod_minLine = (lod_param.length() >= 2 ?
+                                       (lod_param[2].split("minLineLengthThreshold=").length() == 2 ?
+                                           lod_param[2].split("minLineLengthThreshold=")[1] :
+                                   (lod_param[1].split("minLineLengthThreshold=").length() == 2 ?
+                                       lod_param[1].split("minLineLengthThreshold=")[1] : "")) : "");
+
+            QString lod_minPoly = (lod_param.length() >= 2 ?
+                                       (lod_param[2].split("minPolygonAreaThreshold=").length() == 2 ?
+                                           lod_param[2].split("minPolygonAreaThreshold=")[1] :
+                                   (lod_param[1].split("minPolygonAreaThreshold=").length() == 2 ?
+                                       lod_param[1].split("minPolygonAreaThreshold=")[1] : "")) : "");
+
             QDialog dialog(m_parentWidget);
             QFormLayout form(&dialog);
 
@@ -418,18 +438,22 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
             QList<QLineEdit *> fields;
 
             QLineEdit *lineEdit1 = new QLineEdit(&dialog);
+            lineEdit1->setText(lod_name);
             form.addRow(QString("name "), lineEdit1);
             fields << lineEdit1;
 
             QLineEdit *lineEdit2 = new QLineEdit(&dialog);
+            lineEdit2->setText(lod_useLod);
             form.addRow(QString("useLod "), lineEdit2);
             fields << lineEdit2;
 
             QLineEdit *lineEdit3 = new QLineEdit(&dialog);
+            lineEdit3->setText(lod_minLine);
             form.addRow(QString("minLineLengthThreshold "), lineEdit3);
             fields << lineEdit3;
 
             QLineEdit *lineEdit4 = new QLineEdit(&dialog);
+            lineEdit4->setText(lod_minPoly);
             form.addRow(QString("minPolygonAreaThreshold "), lineEdit4);
             fields << lineEdit4;
 
@@ -439,13 +463,14 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
             QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
             QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
 
+            QString new_lod_param = "";
             if (dialog.exec() == QDialog::Accepted)
             {
                 // If user hits OK
                 foreach(QLineEdit * lineEdit, fields)
                 {
                     if(!lineEdit->text().isEmpty())
-                        qInfo() << lineEdit->text();
+                        new_lod_param += lineEdit->text() + " ";
                 }
             }
 
