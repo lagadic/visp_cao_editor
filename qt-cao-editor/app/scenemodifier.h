@@ -65,17 +65,17 @@ public:
     Qt3DRender::QObjectPicker *createObjectPickerForEntity(Qt3DCore::QEntity *entity);
 
 public slots:
-    void enableCaoMesh(bool enabled);
     void mouseControls(Qt3DInput::QKeyEvent *event);
     void parse3DFile(QTextStream &input);
+    void removeSceneElements();
 
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
-    void createCylinder(QVector3D axis_1, QVector3D axis_2,
+    void createCylinder(const QVector3D axis_1, const QVector3D axis_2,
                         unsigned int index, float radius, QString load_param);
-    void createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center,
+    void createCircle(const QVector3D circum_1, const QVector3D circum_2, const QVector3D center,
                       unsigned int index, float radius, QString load_param);
-    void createLines(QVector3D v0, QVector3D v1,
+    void createLines(const QVector3D v0, const QVector3D v1,
                      const unsigned int index, const bool axis, QString lod_param);
     int primitiveType(const QString &type);
     QString getLodParameters(QStringList data,
@@ -85,7 +85,7 @@ private:
     bool handleMousePress(QMouseEvent *event);
 
     Qt3DCore::QEntity *m_rootEntity;
-    Qt3DCore::QEntity *m_caoEntity;
+    Qt3DCore::QEntity *m_lineEntity;
     Qt3DCore::QEntity *m_cuboidEntity;
     Qt3DCore::QEntity *m_cylinderEntity;
     Qt3DCore::QEntity *m_circleEntity;
@@ -94,7 +94,7 @@ private:
 
     Qt::MouseButton m_mouseButton;
 
-    //QList<Qt3DRender::QObjectPicker *> *m_facePickers;
+    QList<Qt3DCore::QEntity *> scene_entities;
 
 };
 

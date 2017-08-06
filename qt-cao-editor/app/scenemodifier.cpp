@@ -18,7 +18,7 @@
 SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget)
     : m_rootEntity(rootEntity)
     , m_parentWidget(parentWidget)
-    , m_caoEntity(nullptr)
+    , m_lineEntity(nullptr)
     , m_cylinderEntity(nullptr)
     , m_circleEntity(nullptr)
 {
@@ -50,7 +50,6 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
 SceneModifier::~SceneModifier()
 {
     delete m_cuboidEntity;
-    delete m_caoEntity;
     delete m_cylinderEntity;
     delete m_circleEntity;
 }
@@ -151,7 +150,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
         {
             if (data[0].toInt() == 0)
             {
-                for(unsigned int i=0;i<lineRawData->length();i++)
+                for(int i=0;i<lineRawData->length();i++)
                 {
                     QVector2D l(lineRawData->at(i));
                     this->createLines(vertices->at(l[0]), vertices->at(l[1]), i, false, line_param->at(i));
@@ -221,7 +220,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
     }
 }
 
-void SceneModifier::createLines(QVector3D v0, QVector3D v1,
+void SceneModifier::createLines(const QVector3D v0, const QVector3D v1,
                                 const unsigned int index, const bool axis, QString lod_param)
 {
     Qt3DRender::QGeometryRenderer *line_mesh = new Qt3DRender::QGeometryRenderer();
@@ -304,7 +303,7 @@ void SceneModifier::createLines(QVector3D v0, QVector3D v1,
     Qt3DRender::QMaterial *material = new Qt3DExtras::QPerVertexColorMaterial(m_rootEntity);
 
     // Line Entity
-    Qt3DCore::QEntity *m_lineEntity = new Qt3DCore::QEntity(m_rootEntity);
+    m_lineEntity = new Qt3DCore::QEntity(m_rootEntity);
     m_lineEntity->addComponent(line_mesh);
     m_lineEntity->addComponent(material);
 
@@ -315,7 +314,7 @@ void SceneModifier::createLines(QVector3D v0, QVector3D v1,
     }
 }
 
-void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2,
+void SceneModifier::createCylinder( const QVector3D axis_1, const QVector3D axis_2,
                                    unsigned int index,float radius, QString load_param)
 {
     QVector3D main_axis(axis_1[0] - axis_2[0], axis_1[1] - axis_2[1], axis_1[2] - axis_2[2]);
@@ -349,7 +348,7 @@ void SceneModifier::createCylinder(QVector3D axis_1, QVector3D axis_2,
     createObjectPickerForEntity(m_cylinderEntity);
 }
 
-void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector3D center,
+void SceneModifier::createCircle(const QVector3D circum_1, const QVector3D circum_2, const QVector3D center,
                                  unsigned int index, float radius, QString load_param)
 {
     Qt3DExtras::QTorusMesh *circle = new Qt3DExtras::QTorusMesh();
@@ -372,11 +371,6 @@ void SceneModifier::createCircle(QVector3D circum_1, QVector3D circum_2, QVector
     createObjectPickerForEntity(m_circleEntity);
 }
 
-void SceneModifier::enableCaoMesh(bool enabled)
-{
-    m_caoEntity->setEnabled(enabled);
-}
-
 Qt3DRender::QObjectPicker *SceneModifier::createObjectPickerForEntity(Qt3DCore::QEntity *entity)
 {
     Qt3DRender::QObjectPicker *picker = nullptr;
@@ -384,13 +378,25 @@ Qt3DRender::QObjectPicker *SceneModifier::createObjectPickerForEntity(Qt3DCore::
     picker->setHoverEnabled(false);
     entity->addComponent(picker);
     connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
+    scene_entities.append(entity);
     return picker;
+}
+
+void SceneModifier::removeSceneElements()
+{
+//    Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender());
+    Q_FOREACH (Qt3DCore::QEntity *entity, scene_entities)
+    {
+        entity->setEnabled(false);
+    }
+
+//    statusBar()->showMessage(tr("Deleted Enitities"), 2000);
 }
 
 bool SceneModifier::handleMousePress(QMouseEvent *event)
 {
     m_mouseButton = event->button();
-    return false; // Never consume press event
+    return false;
 }
 
 void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)

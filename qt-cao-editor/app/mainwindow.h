@@ -68,6 +68,7 @@ private slots:
     void open();
     bool save();
     bool saveAs();
+    bool removeConfirm();
     void about();
 #ifndef QT_NO_SESSIONMANAGER
     void commitData(QSessionManager &);

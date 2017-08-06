@@ -72,6 +72,24 @@ bool MainWindow::saveAs()
     return saveFile(dialog.selectedFiles().first());
 }
 
+bool MainWindow::removeConfirm()
+{
+    const QMessageBox::StandardButton ret
+        = QMessageBox::warning(this, tr("Application"),
+                               tr("Deleting all the elements in the Scene.."),
+                               QMessageBox::Apply | QMessageBox::Cancel);
+    switch (ret) {
+    case QMessageBox::Apply:
+        modifier->removeSceneElements();
+        return true;
+    case QMessageBox::Cancel:
+        return false;
+    default:
+        break;
+    }
+    return true;
+}
+
 void MainWindow::about()
 {
    QMessageBox::about(this, tr("About Application"),
@@ -104,8 +122,12 @@ void MainWindow::createActions()
 
     caoToolBar->addSeparator();
 
-    QToolBar *xmlToolBar = addToolBar(tr("XML"));
+    QAction *clearScene = new QAction(QIcon(":/images/icon_clean.svg"), tr("&Clear Scene"), this);
+    clearScene->setStatusTip(tr("Clear Scene"));
+    connect(clearScene, &QAction::triggered, this, &MainWindow::removeConfirm);
+    caoToolBar->addAction(clearScene);
 
+    QToolBar *xmlToolBar = addToolBar(tr("XML"));
 
     QAction *newAct = new QAction(QIcon(":/images/icon_xml.png"), tr("&Open XML Editor"), this);
     newAct->setShortcuts(QKeySequence::New);
