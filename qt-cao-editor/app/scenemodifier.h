@@ -78,7 +78,7 @@ private slots:
     void createLines(const QVector3D v0, const QVector3D v1,
                      const unsigned int index, const bool axis, QString lod_param);
     int primitiveType(const QString &type);
-    QString getLodParameters(QStringList data,
+    QString getLodParameters(QStringList data, const QString type,
                           const unsigned int idx1, const unsigned int idx2);
 
 private:

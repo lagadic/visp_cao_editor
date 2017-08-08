@@ -68,10 +68,10 @@ int SceneModifier::primitiveType(const QString &type)
     return 0;
 }
 
-QString SceneModifier::getLodParameters(QStringList data,
+QString SceneModifier::getLodParameters(QStringList data, const QString type,
                                         const unsigned int idx1, const unsigned int idx2)
 {
-    QString lod_param = "+";
+    QString lod_param = type + "+";
     for(unsigned int i=idx1; i<idx2; i++)
     {
         if(!data[i].compare("#"))
@@ -140,7 +140,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
 
         else if(!m_template.compare("3D_LNS", Qt::CaseSensitive) && data_size >= 2)
         {
-            lod_param = getLodParameters(data, 2, data_size);
+            lod_param = getLodParameters(data, m_template, 2, data_size);
             QVector2D line1(data[0].toInt(), data[1].toInt());
             lineRawData->append(line1);
             line_param->append(lod_param);
@@ -162,7 +162,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
                 QList<int> faceMap;
                 unsigned int num_pts = data[0].toInt();
                 faceMap.append(num_pts);
-                lod_param = getLodParameters(data, num_pts+1, data_size);
+                lod_param = getLodParameters(data, m_template, num_pts+1, data_size);
 
                 for(unsigned int i=1;i<=num_pts;i++)
                 {
@@ -181,7 +181,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
             QList<int> faceMap;
             unsigned int num_pts = data[0].toInt();
             faceMap.append(num_pts);
-            lod_param = getLodParameters(data, num_pts+1, data_size);
+            lod_param = getLodParameters(data, m_template, num_pts+1, data_size);
 
             for(unsigned int i=1;i<num_pts;i++)
             {
@@ -199,7 +199,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
 
         else if(!m_template.compare("3D_CYL", Qt::CaseSensitive) && data_size >= 3)
         {
-            lod_param = getLodParameters(data, 3, data_size);
+            lod_param = getLodParameters(data, m_template, 3, data_size);
             unsigned int idx1 = data[0].toInt();
             unsigned int idx2 = data[1].toInt();
             this->createCylinder(vertices->at(idx1), vertices->at(idx2), cylinder->length(), data[2].toFloat(), lod_param);
@@ -209,7 +209,7 @@ void SceneModifier::parse3DFile(QTextStream &input)
 
         else if(!m_template.compare("3D_CIR", Qt::CaseSensitive) && data_size >= 4)
         {
-            lod_param = getLodParameters(data, 4, data_size);
+            lod_param = getLodParameters(data, m_template, 4, data_size);
             unsigned int idx1 = data[2].toInt();
             unsigned int idx2 = data[3].toInt();
             unsigned int idx3 = data[1].toInt();
@@ -309,7 +309,7 @@ void SceneModifier::createLines(const QVector3D v0, const QVector3D v1,
 
     if(!axis)
     {
-        m_lineEntity->setObjectName(QString::number(index)+lod_param);
+        m_lineEntity->setObjectName(QString::number(index)+ ":" +lod_param);
         createObjectPickerForEntity(m_lineEntity);
     }
 }
@@ -344,7 +344,7 @@ void SceneModifier::createCylinder( const QVector3D axis_1, const QVector3D axis
     m_cylinderEntity->addComponent(caoMaterial);
     m_cylinderEntity->addComponent(cylinderTransform);
 
-    m_cylinderEntity->setObjectName(QString::number(index)+load_param);
+    m_cylinderEntity->setObjectName(QString::number(index)+ ":" +load_param);
     createObjectPickerForEntity(m_cylinderEntity);
 }
 
@@ -367,7 +367,7 @@ void SceneModifier::createCircle(const QVector3D circum_1, const QVector3D circu
     m_circleEntity->addComponent(caoMaterial);
     m_circleEntity->addComponent(circleTransform);
 
-    m_circleEntity->setObjectName(QString::number(index)+load_param);
+    m_circleEntity->setObjectName(QString::number(index) + ":" + load_param);
     createObjectPickerForEntity(m_circleEntity);
 }
 
@@ -384,13 +384,10 @@ Qt3DRender::QObjectPicker *SceneModifier::createObjectPickerForEntity(Qt3DCore::
 
 void SceneModifier::removeSceneElements()
 {
-//    Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender());
     Q_FOREACH (Qt3DCore::QEntity *entity, scene_entities)
     {
         entity->setEnabled(false);
     }
-
-//    statusBar()->showMessage(tr("Deleted Enitities"), 2000);
 }
 
 bool SceneModifier::handleMousePress(QMouseEvent *event)
@@ -416,7 +413,17 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())
         {
-            QStringList lod_param = pressedEntity->objectName().split("+")[1].split(" ");
+            QStringList data = pressedEntity->objectName().split("+");
+            QString m_template = data[0].split(":")[1];
+            int index = data[0].split(":")[0].toInt();
+            qInfo() << data << m_template << index;
+
+            QStringList lod_param = data[1].split(" ");
+
+            for(int i=0;i<lod_param.length();i++)
+                if(lod_param[i]=="")
+                    lod_param.removeAt(i);
+
             QString lod_name = (lod_param.length() >= 1 ? (lod_param[0].split("name=").length() == 2 ? lod_param[0].split("name=")[1] : "") : "");
             QString lod_useLod = (lod_param.length() >= 2 ?
                                       (lod_param[1].split("useLod=").length() == 2 ?
@@ -469,17 +476,41 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
             QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
             QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
 
-            QString new_lod_param = "";
+            QString new_lod_param = "+";
             if (dialog.exec() == QDialog::Accepted)
             {
+                int idx = 0;
                 // If user hits OK
                 foreach(QLineEdit * lineEdit, fields)
                 {
                     if(!lineEdit->text().isEmpty())
-                        new_lod_param += lineEdit->text() + " ";
+                    {
+                        if(idx==0) new_lod_param += "name=" + lineEdit->text() + " ";
+                        else if(idx==1) new_lod_param += "useLod=" + lineEdit->text() + " ";
+                        else if(idx==2) new_lod_param += "minLineLengthThreshold=" + lineEdit->text() + " ";
+                        else if(idx==3) new_lod_param += "minPolygonAreaThreshold=" + lineEdit->text();
+                    }
+                    idx++;
                 }
             }
 
+            qInfo() << index << m_template << new_lod_param;
+
+
+            if(!m_template.compare("3D_LNS", Qt::CaseSensitive))
+                line_param->replace(index, new_lod_param);
+
+            else if(!m_template.compare("3D_F_LNS", Qt::CaseSensitive))
+                faceline_param->replace(index, new_lod_param);
+
+            else if(!m_template.compare("3D_F_PTS", Qt::CaseSensitive))
+                facepoint_param->replace(index, new_lod_param);
+
+            else if(!m_template.compare("3D_CYL", Qt::CaseSensitive))
+                cylinder_param->replace(index, new_lod_param);
+
+            else if(!m_template.compare("3D_CIR", Qt::CaseSensitive))
+                circle_param->replace(index, new_lod_param);
         }
     }
 }
