@@ -59,6 +59,7 @@ public:
 
     void loadCaoFile(const QString &fileName);
     SceneModifier *modifier;
+    Qt3DRender::QCamera *cameraEntity;
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -70,6 +71,10 @@ private slots:
     bool saveAs();
     bool removeConfirm();
     void about();
+    void parseXML();
+    void qcameraDialog();
+    void updateCameraProjection();
+    float getCameraProjection(QString line, QString op_tag, QString cl_tag);
 #ifndef QT_NO_SESSIONMANAGER
     void commitData(QSessionManager &);
 #endif
@@ -86,6 +91,10 @@ private:
     QString curFile;
 
     XmlEditor *xmlWin;
+
+    QDialog *dialog;
+    QFormLayout *form;
+    QList<QLineEdit *> qcamera_fields;
 };
 //! [0]
 

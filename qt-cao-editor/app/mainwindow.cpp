@@ -90,6 +90,110 @@ bool MainWindow::removeConfirm()
     return true;
 }
 
+float MainWindow::getCameraProjection(QString line, QString op_tag, QString cl_tag)
+{
+    return line.split(op_tag)[1].split(cl_tag)[0].toFloat();
+}
+
+void MainWindow::parseXML()
+{
+    QString fileName = QFileDialog::getOpenFileName(this);
+    float u0, v0, px, py, near_clipping, far_clipping;
+
+    if (!fileName.isEmpty())
+    {
+        QFile file(fileName);
+        if (!file.open(QFile::ReadOnly | QFile::Text)) {
+            QMessageBox::warning(this, tr("Application"),
+                                 tr("Cannot read file %1:\n%2.")
+                                 .arg(QDir::toNativeSeparators(fileName), file.errorString()));
+            return;
+        }
+        QTextStream in(&file);
+
+        while(!in.atEnd())
+        {
+            QString line = in.readLine();
+
+            if(line.split("<u0>").length() == 2){u0 = getCameraProjection(line, "<u0>","</u0>");}
+
+            else if(line.split("<v0>").length() == 2){v0 = getCameraProjection(line, "<v0>", "</v0>");}
+
+            else if(line.split("<px>").length() == 2){px = getCameraProjection(line, "<px>", "</px>");}
+
+            else if(line.split("<py>").length() == 2){py = getCameraProjection(line, "<py>", "</py>");}
+
+            else if(line.split("<near_clipping>").length() == 2){near_clipping = getCameraProjection(line, "<near_clipping>", "</near_clipping>");}
+
+            else if(line.split("<far_clipping>").length() == 2){far_clipping = getCameraProjection(line, "<far_clipping>", "</far_clipping>");}
+
+        }
+        file.close();
+    }
+
+    QLineEdit *lineEdit1 = new QLineEdit(dialog);
+    lineEdit1->setText(QString::number(360*qAtan(v0/py)/M_PI));
+    form->addRow(QString("Field of View "), lineEdit1);
+    qcamera_fields << lineEdit1;
+
+    QLineEdit *lineEdit2 = new QLineEdit(dialog);
+    lineEdit2->setText(QString::number((u0*py)/(v0*px)));
+    form->addRow(QString("Aspect Ratio "), lineEdit2);
+    qcamera_fields << lineEdit2;
+
+    QLineEdit *lineEdit3 = new QLineEdit(dialog);
+    lineEdit3->setText(QString::number(near_clipping));
+    form->addRow(QString("Near Plane "), lineEdit3);
+    qcamera_fields << lineEdit3;
+
+    QLineEdit *lineEdit4 = new QLineEdit(dialog);
+    lineEdit4->setText(QString::number(far_clipping));
+    form->addRow(QString("Far Plane "), lineEdit4);
+    qcamera_fields << lineEdit4;
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                               Qt::Horizontal, dialog);
+    form->addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QPushButton *saveSett = new QPushButton("OK",dialog);
+    form->addRow(saveSett);
+    QObject::connect(saveSett, SIGNAL (released()), this, SLOT(updateCameraProjection()));
+}
+
+void MainWindow::qcameraDialog()
+{
+    dialog = new QDialog(this);
+    form = new QFormLayout(dialog);
+    form->addRow(new QLabel("QCamera Settings"));
+
+
+    QPushButton *openXML = new QPushButton("Read from XML",dialog);
+//    openXML->setGeometry(QRect(QPoint(30, 30),
+//                               QSize(20, 50)));
+    form->addRow(openXML);
+    QObject::connect(openXML, SIGNAL (released()), this, SLOT(parseXML()));
+
+//    <u0>325.66776</u0>
+//    <v0>243.69727</v0>
+//    <px>839.21470</px> K00=alpha
+//    <py>839.44555</py> K11=beta
+//   </camera>
+//    <angle_appear>70</angle_appear>
+//    <angle_disappear>80</angle_disappear>
+//    <>0.1</near_clipping>
+//    <far_clipping>100</far_clipping>
+//    <fov_clipping>1</fov_clipping>
+
+    //setPerspectiveProjection(float fieldOfView, float aspectRatio, float nearPlane, float farPlane)
+
+    if (dialog->exec() == QDialog::Accepted)
+    {
+
+    }
+}
+
 void MainWindow::about()
 {
    QMessageBox::about(this, tr("About Application"),
@@ -135,6 +239,11 @@ void MainWindow::createActions()
     connect(newAct, &QAction::triggered, this, &MainWindow::newFile);
     caoMenu->addAction(newAct);
     xmlToolBar->addAction(newAct);
+
+    QAction *qCam = new QAction(QIcon(":/images/icon_qcamera.svg"), tr("&QCamera-XML Settings"), this);
+    qCam->setStatusTip(tr("QCamera-XML Settings"));
+    connect(qCam, &QAction::triggered, this, &MainWindow::qcameraDialog);
+    xmlToolBar->addAction(qCam);
 
     const QIcon saveAsIcon = QIcon::fromTheme("document-save-as");
     QAction *saveAsAct = caoMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
@@ -190,7 +299,6 @@ void MainWindow::writeSettings()
 bool MainWindow::maybeSave()
 {
     //Check if any modifications
-
     const QMessageBox::StandardButton ret
         = QMessageBox::warning(this, tr("Application"),
                                tr("The document has been modified.\n"
@@ -225,6 +333,24 @@ void MainWindow::loadCaoFile(const QString &fileName)
 
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("File loaded"), 2000);
+}
+
+void MainWindow::updateCameraProjection()
+{
+    float fov = (!qcamera_fields.at(0)->text().isEmpty() ?
+                     qcamera_fields.at(0)->text().toFloat() : cameraEntity->lens()->fieldOfView());
+
+    float aspectRatio = (!qcamera_fields.at(1)->text().isEmpty() ?
+                             qcamera_fields.at(1)->text().toFloat() : cameraEntity->lens()->aspectRatio());
+
+    float nearPlane = (!qcamera_fields.at(2)->text().isEmpty() ?
+                             qcamera_fields.at(2)->text().toFloat() : cameraEntity->lens()->nearPlane());
+
+    float farPlane = (!qcamera_fields.at(3)->text().isEmpty() ?
+                             qcamera_fields.at(3)->text().toFloat() : cameraEntity->lens()->farPlane());
+
+    cameraEntity->lens()->setPerspectiveProjection(fov, aspectRatio, nearPlane, farPlane);
+    dialog->accept();
 }
 
 bool MainWindow::saveFile(const QString &fileName)
