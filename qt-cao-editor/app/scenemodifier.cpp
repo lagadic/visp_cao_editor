@@ -23,9 +23,19 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     , m_circleEntity(nullptr)
 {
     // World Axis
-    this->createLines(QVector3D(-100000.0f, 0.0f, 0.0f), QVector3D(100000.0f, 0.0f, 0.0f), 0, true, ""); //X-axis
-    this->createLines(QVector3D(0.0f, -100000.0f, 0.0f), QVector3D(0.0f, 100000.0f, 0.0f), 1, true, ""); //Y-axis
-    this->createLines(QVector3D(0.0f, 0.0f, -100000.0f), QVector3D(0.0f, 0.0f, 100000.0f), 2, true, ""); //Z-axis
+    //X-axis
+    this->createLines(QVector3D(-0.6f, 0.0f, -0.6f), QVector3D(0.6f, 0.0f, -0.6f), 1, true, "");
+    this->createLines(QVector3D(-0.6f, 0.0f, -0.3f), QVector3D(0.6f, 0.0f, -0.3f), 1, true, "");
+    this->createLines(QVector3D(-0.6f, 0.0f, 0.0f),  QVector3D(0.6f, 0.0f, 0.0f), 0, true, "");
+    this->createLines(QVector3D(-0.6f, 0.0f, 0.3f),  QVector3D(0.6f, 0.0f, 0.3f), 1, true, "");
+    this->createLines(QVector3D(-0.6f, 0.0f, 0.6f),  QVector3D(0.6f, 0.0f, 0.6f), 1, true, "");
+
+    //Z-axis
+    this->createLines(QVector3D(-0.6f, 0.0f, -0.6f), QVector3D(-0.6f, 0.0f, 0.6f), 1, true, "");
+    this->createLines(QVector3D(-0.3f, 0.0f, -0.6f), QVector3D(-0.3f, 0.0f, 0.6f), 1, true, "");
+    this->createLines(QVector3D(0.0f, 0.0f, -0.6f),  QVector3D(0.0f, 0.0f, 0.6f), 2, true, "");
+    this->createLines(QVector3D(0.3f, 0.0f, -0.6f),  QVector3D(0.3f, 0.0f, 0.6f), 1, true, "");
+    this->createLines(QVector3D(0.6f, 0.0f, -0.6f),  QVector3D(0.6f, 0.0f, 0.6f), 1, true, "");
 
     // Cuboid shape data
     Qt3DExtras::QCuboidMesh *cuboid = new Qt3DExtras::QCuboidMesh();
@@ -45,13 +55,11 @@ SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidge
     m_cuboidEntity->addComponent(cuboid);
     m_cuboidEntity->addComponent(caoMaterial);
     m_cuboidEntity->addComponent(cuboidTransform);
+    scene_entities.append(m_cuboidEntity);
 }
 
 SceneModifier::~SceneModifier()
 {
-    delete m_cuboidEntity;
-    delete m_cylinderEntity;
-    delete m_circleEntity;
 }
 
 int SceneModifier::primitiveType(const QString &type)
@@ -98,8 +106,6 @@ void SceneModifier::parse3DFile(QTextStream &input)
     facepoint_param = new QList<QString>();
     cylinder_param = new QList<QString>();
     circle_param = new QList<QString>();
-
-    //m_facePickers = new QList<Qt3DRender::QObjectPicker *>();
 
     while(!input.atEnd())
     {
@@ -235,7 +241,7 @@ void SceneModifier::createLines(const QVector3D v0, const QVector3D v1,
 
     QVector<QVector3D> vertices = (!axis ? QVector<QVector3D>() << v0 << QVector3D (0.5f, 0.0f, 0.5f) << v1  << QVector3D (0.5f, 0.0f, 0.5f)
                                          : (index==0 ? QVector<QVector3D>() << v0 << QVector3D (1.0f, 0.0f, 0.0f) << v1  << QVector3D (1.0f, 0.0f, 0.0f)
-                                                      : (index==1 ? QVector<QVector3D>() << v0 << QVector3D (0.0f, 1.0f, 0.0f) << v1  << QVector3D (0.0f, 1.0f, 0.0f)
+                                                      : (index==1 ? QVector<QVector3D>() << v0 << QVector3D (0.0f, 0.0f, 0.0f) << v1  << QVector3D (0.0f, 0.0f, 0.0f)
                                                                   : (index==2 ? QVector<QVector3D>() << v0 << QVector3D (0.0f, 0.0f, 1.0f) << v1  << QVector3D (0.0f, 0.0f, 1.0f)
                                                                               : QVector<QVector3D>() << v0 << QVector3D (0.0f, 1.0f, 1.0f) << v1  << QVector3D (0.0f, 1.0f, 1.0f)))));
 
@@ -373,8 +379,7 @@ void SceneModifier::createCircle(const QVector3D circum_1, const QVector3D circu
 
 Qt3DRender::QObjectPicker *SceneModifier::createObjectPickerForEntity(Qt3DCore::QEntity *entity)
 {
-    Qt3DRender::QObjectPicker *picker = nullptr;
-    picker = new Qt3DRender::QObjectPicker(entity);
+    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(entity);
     picker->setHoverEnabled(false);
     entity->addComponent(picker);
     connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePickerPress);
@@ -390,6 +395,11 @@ void SceneModifier::removeSceneElements()
     }
 }
 
+void SceneModifier::getLineLength()
+{
+
+}
+
 bool SceneModifier::handleMousePress(QMouseEvent *event)
 {
     m_mouseButton = event->button();
@@ -398,16 +408,6 @@ bool SceneModifier::handleMousePress(QMouseEvent *event)
 
 void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
 {
-//    switch (event->type())
-//    {
-//        case QEvent::MouseButtonPress:
-//            handleMousePress(static_cast<QMouseEvent *>(event));
-//            break;
-
-//        default:
-//            break;
-//    }
-
     if (event->button() == Qt3DRender::QPickEvent::RightButton)
     {
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
@@ -462,8 +462,21 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
 
             QLineEdit *lineEdit3 = new QLineEdit(&dialog);
             lineEdit3->setText(lod_minLine);
+
+//            QPushButton *lineLength = new QPushButton("Update", &dialog);
+//            QObject::connect(lineLength, SIGNAL (released()), this, SLOT(getLineLength()));
+
+//            QHBoxLayout hBoxLayout;
+//            hBoxLayout.addWidget(lineEdit3);
+//            hBoxLayout.addWidget(lineLength);
+
+//            QWidget container;
+//            container.setLayout(&hBoxLayout);
+
             form.addRow(QString("minLineLengthThreshold "), lineEdit3);
             fields << lineEdit3;
+
+
 
             QLineEdit *lineEdit4 = new QLineEdit(&dialog);
             lineEdit4->setText(lod_minPoly);
@@ -493,9 +506,6 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
                     idx++;
                 }
             }
-
-            qInfo() << index << m_template << new_lod_param;
-
 
             if(!m_template.compare("3D_LNS", Qt::CaseSensitive))
                 line_param->replace(index, new_lod_param);

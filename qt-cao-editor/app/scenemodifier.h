@@ -40,6 +40,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QLabel>
+#include <QPushButton>
 
 class SceneModifier : public QObject
 {
@@ -77,6 +78,8 @@ private slots:
                       unsigned int index, float radius, QString load_param);
     void createLines(const QVector3D v0, const QVector3D v1,
                      const unsigned int index, const bool axis, QString lod_param);
+    void getLineLength();
+
     int primitiveType(const QString &type);
     QString getLodParameters(QStringList data, const QString type,
                           const unsigned int idx1, const unsigned int idx2);
