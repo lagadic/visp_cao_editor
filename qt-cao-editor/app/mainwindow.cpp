@@ -224,6 +224,12 @@ void MainWindow::createActions()
     caoMenu->addAction(saveAct);
     caoToolBar->addAction(saveAct);
 
+    const QIcon saveAsIcon = QIcon::fromTheme("document-save-as");
+    QAction *saveAsAct = caoMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
+    saveAsAct->setShortcuts(QKeySequence::SaveAs);
+    saveAsAct->setStatusTip(tr("Save the document under a new name"));
+    caoToolBar->addAction(saveAsAct);
+
     caoToolBar->addSeparator();
 
     QAction *clearScene = new QAction(QIcon(":/images/icon_clean.svg"), tr("&Clear Scene"), this);
@@ -244,11 +250,6 @@ void MainWindow::createActions()
     qCam->setStatusTip(tr("QCamera-XML Settings"));
     connect(qCam, &QAction::triggered, this, &MainWindow::qcameraDialog);
     xmlToolBar->addAction(qCam);
-
-    const QIcon saveAsIcon = QIcon::fromTheme("document-save-as");
-    QAction *saveAsAct = caoMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
-    saveAsAct->setShortcuts(QKeySequence::SaveAs);
-    saveAsAct->setStatusTip(tr("Save the document under a new name"));
 
 
     caoMenu->addSeparator();
@@ -367,6 +368,7 @@ bool MainWindow::saveFile(const QString &fileName)
     QTextStream out(&file);
 
     QStringList data;
+
 
     // Header
     out << "# ViSP Qt Editor CAO File\nV1\n";
