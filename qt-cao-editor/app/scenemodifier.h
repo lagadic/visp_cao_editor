@@ -9,9 +9,9 @@
 
 #include <QtCore/QObject>
 
-#include <Qt3DCore/qentity.h>
-#include <Qt3DCore/qtransform.h>
-#include <QtCore/qmath.h>
+#include <Qt3DCore/QEntity>
+#include <Qt3DCore/QTransform>
+#include <QtCore/QtMath>
 #include <QtCore/QFileInfo>
 #include <QtCore/QFile>
 
@@ -67,21 +67,21 @@ public:
 
 public slots:
     void mouseControls(Qt3DInput::QKeyEvent *event);
-    void parse3DFile(QTextStream &input);
+    void parse3DFile(QTextStream &input, const bool useBlenderFrame);
     void removeSceneElements();
 
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
-    void createCylinder(const QVector3D axis_1, const QVector3D axis_2,
-                        unsigned int index, float radius, QString load_param);
-    void createCircle(const QVector3D circum_1, const QVector3D circum_2, const QVector3D center,
-                      unsigned int index, float radius, QString load_param);
-    void createLines(const QVector3D v0, const QVector3D v1,
-                     const unsigned int index, const bool axis, QString lod_param);
+    void createCylinder(const QVector3D &axis_1, const QVector3D &axis_2,
+                        const unsigned int index, const float radius, const QString &load_param);
+    void createCircle(const QVector3D &circum_1, const QVector3D &circum_2, const QVector3D &center,
+                      const unsigned int index, const float radius, const QString &load_param);
+    void createLines(const QVector3D &v0, const QVector3D &v1,
+                     const unsigned int index, const bool axis, const QString &lod_param);
     void getLineLength();
 
     int primitiveType(const QString &type);
-    QString getLodParameters(QStringList data, const QString type,
+    QString getLodParameters(const QStringList &data, const QString &type,
                           const unsigned int idx1, const unsigned int idx2);
 
 private:

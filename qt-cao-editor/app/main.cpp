@@ -39,16 +39,9 @@
 ****************************************************************************/
 
 #include <QApplication>
-#include <QQuickWidget>
-#include <QMdiArea>
-#include <QMenuBar>
 #include <QCommandLineParser>
-#include <QCommandLineOption>
-#include <QLCDNumber>
-#include <QGuiApplication>
 
 #include "mainwindow.h"
-
 #include "scenemodifier.h"
 
 
@@ -81,7 +74,7 @@ int main(int argc, char **argv)
 
 //    cameraEntity->setProjectionType(Qt3DRender::QCameraLens::PerspectiveProjection);
     mainWin.cameraEntity->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.1f, 1000.0f);
-    mainWin.cameraEntity->setPosition(QVector3D(0, 10.0f, 20.0f));
+    mainWin.cameraEntity->setPosition(QVector3D(20.0f, 10.0f, 0.0f));
     mainWin.cameraEntity->setUpVector(QVector3D(0, 1, 0));
     mainWin.cameraEntity->setViewCenter(QVector3D(0, 0, 0));
 

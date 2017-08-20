@@ -11,7 +11,7 @@
 
 #include "mainwindow.h"
 
-MainWindow::MainWindow()
+MainWindow::MainWindow() : useBlenderFrame(false)
 {
     createActions();
     createStatusBar();
@@ -204,7 +204,6 @@ void MainWindow::about()
 
 void MainWindow::createActions()
 {
-
     QMenu *caoMenu = menuBar()->addMenu(tr("&File"));
     QToolBar *caoToolBar = addToolBar(tr("File"));
 
@@ -215,6 +214,11 @@ void MainWindow::createActions()
     connect(openAct, &QAction::triggered, this, &MainWindow::open);
     caoMenu->addAction(openAct);
     caoToolBar->addAction(openAct);
+
+    QCheckBox *blenderFrameCB = new QCheckBox(tr("Use Blender frame"));
+    blenderFrameCB->setStatusTip(tr("Use Blender frame when importing ViSP .cao"));
+    connect(blenderFrameCB, &QCheckBox::stateChanged, this, &MainWindow::blenderFrameStateChanged);
+    caoToolBar->addWidget(blenderFrameCB);
 
 
     QAction *saveAct = new QAction(QIcon::fromTheme("document-save", QIcon(":/images/save.png")), tr("&Save"), this);
@@ -296,6 +300,10 @@ void MainWindow::writeSettings()
     settings.setValue("geometry", saveGeometry());
 }
 
+void MainWindow::blenderFrameStateChanged(int state)
+{
+    useBlenderFrame = (state == Qt::CheckState::Checked);
+}
 
 bool MainWindow::maybeSave()
 {
@@ -327,8 +335,7 @@ void MainWindow::loadCaoFile(const QString &fileName)
     }
 
     QTextStream in(&file);
-
-    modifier->parse3DFile(in);
+    modifier->parse3DFile(in, useBlenderFrame);
 
     file.close();
 
