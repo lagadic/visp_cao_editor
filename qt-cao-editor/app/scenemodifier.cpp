@@ -6,21 +6,15 @@
 #include "scenemodifier.h"
 
 #include <QtCore/QDebug>
-
 #include <QMaterial>
-#include <QEffect>
-
-#include <QTechnique>
-#include <QRenderPass>
-#include <QShaderProgram>
 
 
 SceneModifier::SceneModifier(Qt3DCore::QEntity *rootEntity, QWidget *parentWidget)
     : m_rootEntity(rootEntity)
-    , m_parentWidget(parentWidget)
     , m_lineEntity(nullptr)
     , m_cylinderEntity(nullptr)
     , m_circleEntity(nullptr)
+    , m_parentWidget(parentWidget)
 {
     // World Axis
     //X-axis
@@ -76,7 +70,7 @@ int SceneModifier::primitiveType(const QString &type)
     return 0;
 }
 
-QString SceneModifier::getLodParameters(QStringList data, const QString type,
+QString SceneModifier::getLodParameters(const QStringList &data, const QString &type,
                                         const unsigned int idx1, const unsigned int idx2)
 {
     QString lod_param = type + "+";
@@ -89,7 +83,7 @@ QString SceneModifier::getLodParameters(QStringList data, const QString type,
     return lod_param;
 }
 
-void SceneModifier::parse3DFile(QTextStream &input)
+void SceneModifier::parse3DFile(QTextStream &input, const bool useBlenderFrame)
 {
     if(m_cuboidEntity->isEnabled())
         m_cuboidEntity->setEnabled(false);
@@ -140,8 +134,20 @@ void SceneModifier::parse3DFile(QTextStream &input)
 
         if(!m_template.compare("3D_PTS", Qt::CaseSensitive) && data_size >= 3)
         {
-            QVector3D v(data[0].toFloat(),data[1].toFloat(),data[2].toFloat());
-            vertices->append(v);
+            if (useBlenderFrame)
+            {
+                //Transformation between Blender and Qt
+                // 1  0  0
+                // 0  0  1
+                // 0 -1  0
+                QVector3D v(data[0].toFloat(), data[2].toFloat(), -data[1].toFloat());
+                vertices->append(v);
+            }
+            else
+            {
+                QVector3D v(data[0].toFloat(), data[1].toFloat(), data[2].toFloat());
+                vertices->append(v);
+            }
         }
 
         else if(!m_template.compare("3D_LNS", Qt::CaseSensitive) && data_size >= 2)
@@ -226,8 +232,8 @@ void SceneModifier::parse3DFile(QTextStream &input)
     }
 }
 
-void SceneModifier::createLines(const QVector3D v0, const QVector3D v1,
-                                const unsigned int index, const bool axis, QString lod_param)
+void SceneModifier::createLines(const QVector3D &v0, const QVector3D &v1,
+                                const unsigned int index, const bool axis, const QString &lod_param)
 {
     Qt3DRender::QGeometryRenderer *line_mesh = new Qt3DRender::QGeometryRenderer();
     Qt3DRender::QGeometry *geometry = new Qt3DRender::QGeometry(line_mesh);
@@ -237,7 +243,6 @@ void SceneModifier::createLines(const QVector3D v0, const QVector3D v1,
 
     QByteArray vertexBufferData;
     vertexBufferData.resize(2 * (3 + 3) * sizeof(float));
-
 
     QVector<QVector3D> vertices = (!axis ? QVector<QVector3D>() << v0 << QVector3D (0.5f, 0.0f, 0.5f) << v1  << QVector3D (0.5f, 0.0f, 0.5f)
                                          : (index==0 ? QVector<QVector3D>() << v0 << QVector3D (1.0f, 0.0f, 0.0f) << v1  << QVector3D (1.0f, 0.0f, 0.0f)
@@ -249,9 +254,9 @@ void SceneModifier::createLines(const QVector3D v0, const QVector3D v1,
     int idx = 0;
 
     Q_FOREACH (const QVector3D &v, vertices) {
-    rawVertexArray[idx++] = v.x();
-    rawVertexArray[idx++] = v.y();
-    rawVertexArray[idx++] = v.z();
+        rawVertexArray[idx++] = v.x();
+        rawVertexArray[idx++] = v.y();
+        rawVertexArray[idx++] = v.z();
     }
 
     QByteArray indexBufferData;
@@ -320,11 +325,11 @@ void SceneModifier::createLines(const QVector3D v0, const QVector3D v1,
     }
 }
 
-void SceneModifier::createCylinder( const QVector3D axis_1, const QVector3D axis_2,
-                                   unsigned int index,float radius, QString load_param)
+void SceneModifier::createCylinder(const QVector3D &axis_1, const QVector3D &axis_2,
+                                   const unsigned int index, const float radius, const QString &load_param)
 {
-    QVector3D main_axis(axis_1[0] - axis_2[0], axis_1[1] - axis_2[1], axis_1[2] - axis_2[2]);
-    QVector3D mid_point((axis_1[0] + axis_2[0])/2, (axis_1[1] + axis_2[1])/2, (axis_1[2] + axis_2[2])/2);
+    QVector3D main_axis = axis_2 - axis_1;
+    QVector3D mid_point = (axis_1 + axis_2) / 2;
     QVector3D main_axis_norm = main_axis.normalized();
 
     Qt3DExtras::QCylinderMesh *cylinder = new Qt3DExtras::QCylinderMesh();
@@ -335,14 +340,8 @@ void SceneModifier::createCylinder( const QVector3D axis_1, const QVector3D axis
 
     // CylinderMesh Transform
     Qt3DCore::QTransform *cylinderTransform = new Qt3DCore::QTransform();
-    cylinderTransform->setRotationX(qAcos(QVector3D::dotProduct(main_axis_norm,QVector3D(1.0f, 0.0f, 0.0f)))*180/M_PI);
-    cylinderTransform->setRotationY(qAcos(QVector3D::dotProduct(main_axis_norm,QVector3D(0.0f, 1.0f, 0.0f)))*180/M_PI);
-    cylinderTransform->setRotationZ(qAcos(QVector3D::dotProduct(main_axis_norm,QVector3D(0.0f, 0.0f, 1.0f)))*180/M_PI);
-    qInfo() << cylinderTransform->rotationX() << cylinderTransform->rotationY() << cylinderTransform->rotationZ() << main_axis[2];
-    //    cylinderTransform->setRotationX(qAcos(main_axis[2]/cylinder->length())*180/M_PI); //theta
-    //    cylinderTransform->setRotationY(qAtan2(main_axis[1],main_axis[0])*180/M_PI);      //phi
-
-    //    cylinderTransform->setRotation(QQuaternion::fromAxisAndAngle(main_axis.normalized(),0.0f));
+    QVector3D cylinderAxisRef(0, 1, 0);
+    cylinderTransform->setRotation(QQuaternion::rotationTo(cylinderAxisRef, main_axis_norm));
     cylinderTransform->setTranslation(mid_point);
 
     m_cylinderEntity = new Qt3DCore::QEntity(m_rootEntity);
@@ -354,8 +353,8 @@ void SceneModifier::createCylinder( const QVector3D axis_1, const QVector3D axis
     createObjectPickerForEntity(m_cylinderEntity);
 }
 
-void SceneModifier::createCircle(const QVector3D circum_1, const QVector3D circum_2, const QVector3D center,
-                                 unsigned int index, float radius, QString load_param)
+void SceneModifier::createCircle(const QVector3D &circum_1, const QVector3D &circum_2, const QVector3D &center,
+                                 const unsigned int index, const float radius, const QString &load_param)
 {
     Qt3DExtras::QTorusMesh *circle = new Qt3DExtras::QTorusMesh();
     circle->setRadius(radius);
@@ -365,10 +364,13 @@ void SceneModifier::createCircle(const QVector3D circum_1, const QVector3D circu
 
     // CircleMesh Transform
     Qt3DCore::QTransform *circleTransform = new Qt3DCore::QTransform();
+    QVector3D vec1 = (circum_1 - center).normalized(), vec2 = (circum_2 - center).normalized();
+    QVector3D vec3 = QVector3D::crossProduct(vec1, vec2).normalized();
+    QVector3D circleAxisRef(0, 0, 1);
+    circleTransform->setRotation(QQuaternion::rotationTo(circleAxisRef, vec3));
     circleTransform->setTranslation(center);
 
     m_circleEntity = new Qt3DCore::QEntity(m_rootEntity);
-
     m_circleEntity->addComponent(circle);
     m_circleEntity->addComponent(caoMaterial);
     m_circleEntity->addComponent(circleTransform);

@@ -22,22 +22,15 @@
 #include <Qt3DInput/QInputAspect>
 #include <Qt3DInput/QKeyboardHandler>
 
-#include <Qt3DRender/qcamera.h>
-#include <Qt3DRender/qcameralens.h>
-#include <Qt3DRender/qmesh.h>
-#include <Qt3DRender/qtechnique.h>
-#include <Qt3DRender/qmaterial.h>
-#include <Qt3DRender/qeffect.h>
-#include <Qt3DRender/qtexture.h>
-#include <Qt3DRender/qrenderpass.h>
-#include <Qt3DRender/qsceneloader.h>
-#include <Qt3DRender/qpointlight.h>
-#include <Qt3DRender/qenvironmentlight.h>
-#include <Qt3DRender/qrenderaspect.h>
+#include <Qt3DRender/QCamera>
+#include <Qt3DRender/QCameraLens>
+#include <Qt3DRender/QMesh>
+#include <Qt3DRender/QMaterial>
+#include <Qt3DRender/QPointLight>
 
-#include <Qt3DExtras/qforwardrenderer.h>
-#include <Qt3DExtras/qt3dwindow.h>
-#include <Qt3DExtras/qfirstpersoncameracontroller.h>
+#include <Qt3DExtras/QForwardRenderer>
+#include <Qt3DExtras/Qt3DWindow>
+#include <Qt3DExtras/QFirstPersonCameraController>
 
 #include "scenemodifier.h"
 #include "xmleditor.h"
@@ -84,6 +77,7 @@ private:
     void createStatusBar();
     void readSettings();
     void writeSettings();
+    void blenderFrameStateChanged(int state);
     bool maybeSave();
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
@@ -95,6 +89,7 @@ private:
     QDialog *dialog;
     QFormLayout *form;
     QList<QLineEdit *> qcamera_fields;
+    bool useBlenderFrame;
 };
 //! [0]
 
