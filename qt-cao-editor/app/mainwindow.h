@@ -1,9 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the examples of the Qt Toolkit.
+** Copyright (C) 2017 Vikas Thamizharasan
 ****************************************************************************/
 
 #ifndef MAINWINDOW_H
@@ -64,10 +61,15 @@ private slots:
     bool saveAs();
     bool removeConfirm();
     void about();
+
+    float getCameraProjection(QString &line, QString op_tag, QString cl_tag);
+    float qcameraFieldVal(const int index);
+    void formAddField(const QString tag, const QString text);
     void parseXML();
     void qcameraDialog();
     void updateCameraProjection();
-    float getCameraProjection(QString line, QString op_tag, QString cl_tag);
+    bool verifyXmlTag(const QString tag, QString &line);
+
 #ifndef QT_NO_SESSIONMANAGER
     void commitData(QSessionManager &);
 #endif
@@ -81,8 +83,11 @@ private:
     bool maybeSave();
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
+
     QString strippedName(const QString &fullFileName);
+
     QString curFile;
+    QString curXML;
 
     XmlEditor *xmlWin;
 

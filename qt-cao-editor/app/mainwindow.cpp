@@ -1,10 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the examples of the Qt Toolkit.
-
+** Copyright (C) 2017 Vikas Thamizharasan
 ****************************************************************************/
 
 #include <QtWidgets>
@@ -90,78 +86,6 @@ bool MainWindow::removeConfirm()
     return true;
 }
 
-float MainWindow::getCameraProjection(QString line, QString op_tag, QString cl_tag)
-{
-    return line.split(op_tag)[1].split(cl_tag)[0].toFloat();
-}
-
-void MainWindow::parseXML()
-{
-    QString fileName = QFileDialog::getOpenFileName(this);
-    float u0, v0, px, py, near_clipping, far_clipping;
-
-    if (!fileName.isEmpty())
-    {
-        QFile file(fileName);
-        if (!file.open(QFile::ReadOnly | QFile::Text)) {
-            QMessageBox::warning(this, tr("Application"),
-                                 tr("Cannot read file %1:\n%2.")
-                                 .arg(QDir::toNativeSeparators(fileName), file.errorString()));
-            return;
-        }
-        QTextStream in(&file);
-
-        while(!in.atEnd())
-        {
-            QString line = in.readLine();
-
-            if(line.split("<u0>").length() == 2){u0 = getCameraProjection(line, "<u0>","</u0>");}
-
-            else if(line.split("<v0>").length() == 2){v0 = getCameraProjection(line, "<v0>", "</v0>");}
-
-            else if(line.split("<px>").length() == 2){px = getCameraProjection(line, "<px>", "</px>");}
-
-            else if(line.split("<py>").length() == 2){py = getCameraProjection(line, "<py>", "</py>");}
-
-            else if(line.split("<near_clipping>").length() == 2){near_clipping = getCameraProjection(line, "<near_clipping>", "</near_clipping>");}
-
-            else if(line.split("<far_clipping>").length() == 2){far_clipping = getCameraProjection(line, "<far_clipping>", "</far_clipping>");}
-
-        }
-        file.close();
-    }
-
-    QLineEdit *lineEdit1 = new QLineEdit(dialog);
-    lineEdit1->setText(QString::number(360*qAtan(v0/py)/M_PI));
-    form->addRow(QString("Field of View "), lineEdit1);
-    qcamera_fields << lineEdit1;
-
-    QLineEdit *lineEdit2 = new QLineEdit(dialog);
-    lineEdit2->setText(QString::number((u0*py)/(v0*px)));
-    form->addRow(QString("Aspect Ratio "), lineEdit2);
-    qcamera_fields << lineEdit2;
-
-    QLineEdit *lineEdit3 = new QLineEdit(dialog);
-    lineEdit3->setText(QString::number(near_clipping));
-    form->addRow(QString("Near Plane "), lineEdit3);
-    qcamera_fields << lineEdit3;
-
-    QLineEdit *lineEdit4 = new QLineEdit(dialog);
-    lineEdit4->setText(QString::number(far_clipping));
-    form->addRow(QString("Far Plane "), lineEdit4);
-    qcamera_fields << lineEdit4;
-
-    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-                               Qt::Horizontal, dialog);
-    form->addRow(&buttonBox);
-    QObject::connect(&buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-    QObject::connect(&buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-    QPushButton *saveSett = new QPushButton("OK",dialog);
-    form->addRow(saveSett);
-    QObject::connect(saveSett, SIGNAL (released()), this, SLOT(updateCameraProjection()));
-}
-
 void MainWindow::qcameraDialog()
 {
     dialog = new QDialog(this);
@@ -169,28 +93,15 @@ void MainWindow::qcameraDialog()
     form->addRow(new QLabel("QCamera Settings"));
 
 
-    QPushButton *openXML = new QPushButton("Read from XML",dialog);
+    QPushButton *openXML = new QPushButton("Choose XML",dialog);
 //    openXML->setGeometry(QRect(QPoint(30, 30),
 //                               QSize(20, 50)));
     form->addRow(openXML);
     QObject::connect(openXML, SIGNAL (released()), this, SLOT(parseXML()));
 
-//    <u0>325.66776</u0>
-//    <v0>243.69727</v0>
-//    <px>839.21470</px> K00=alpha
-//    <py>839.44555</py> K11=beta
-//   </camera>
-//    <angle_appear>70</angle_appear>
-//    <angle_disappear>80</angle_disappear>
-//    <>0.1</near_clipping>
-//    <far_clipping>100</far_clipping>
-//    <fov_clipping>1</fov_clipping>
-
-    //setPerspectiveProjection(float fieldOfView, float aspectRatio, float nearPlane, float farPlane)
 
     if (dialog->exec() == QDialog::Accepted)
     {
-
     }
 }
 
@@ -274,7 +185,6 @@ void MainWindow::createActions()
 
 }
 
-
 void MainWindow::createStatusBar()
 {
     statusBar()->showMessage(tr("Ready"));
@@ -343,21 +253,154 @@ void MainWindow::loadCaoFile(const QString &fileName)
     statusBar()->showMessage(tr("File loaded"), 2000);
 }
 
+float MainWindow::getCameraProjection(QString &line, QString op_tag, QString cl_tag)
+{
+    return line.split(op_tag)[1].split(cl_tag)[0].toFloat();
+}
+
+bool MainWindow::verifyXmlTag(const QString tag, QString &line)
+{
+    return (line.split(tag).length() == 2);
+}
+
+void MainWindow::formAddField(const QString tag, const QString text)
+{
+    QLineEdit *lineEdit = new QLineEdit(dialog);
+    lineEdit->setText(text);
+    form->addRow(tag, lineEdit);
+    qcamera_fields << lineEdit;
+}
+
+void MainWindow::parseXML()
+{
+    QString fileName = QFileDialog::getOpenFileName(this);
+    curXML = fileName;
+
+    float u0 = 0, v0 = 0, px = 0, py = 0, near_clipping = 0, far_clipping = 0;
+
+    if (!fileName.isEmpty())
+    {
+        QFile file(fileName);
+        if (!file.open(QFile::ReadOnly | QFile::Text)) {
+            QMessageBox::warning(this, tr("Application"),
+                                 tr("Cannot read file %1:\n%2.")
+                                 .arg(QDir::toNativeSeparators(fileName), file.errorString()));
+            return;
+        }
+        QTextStream in(&file);
+
+        while(!in.atEnd())
+        {
+            QString line = in.readLine();
+
+            if(verifyXmlTag("<u0>",line)) {u0 = getCameraProjection(line, "<u0>","</u0>");}
+
+            else if(verifyXmlTag("<v0>",line)) {v0 = getCameraProjection(line, "<v0>", "</v0>");}
+
+            else if(verifyXmlTag("<px>",line)) {px = getCameraProjection(line, "<px>", "</px>");}
+
+            else if(verifyXmlTag("<py>",line)) {py = getCameraProjection(line, "<py>", "</py>");}
+
+            else if(verifyXmlTag("<near_clipping>",line)) {near_clipping = getCameraProjection(line, "<near_clipping>", "</near_clipping>");}
+
+            else if(verifyXmlTag("<far_clipping>",line)) {far_clipping = getCameraProjection(line, "<far_clipping>", "</far_clipping>");}
+
+        }
+        file.close();
+    }
+
+    this->formAddField(QString("u0 "), QString::number(u0));
+    this->formAddField(QString("v0 "), QString::number(v0));
+    this->formAddField(QString("px "), QString::number(px));
+    this->formAddField(QString("py "), QString::number(py));
+    this->formAddField(QString("near_clipping "), QString::number(near_clipping));
+    this->formAddField(QString("far_clipping "), QString::number(far_clipping));
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                               Qt::Horizontal, dialog);
+    form->addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QPushButton *saveSett = new QPushButton("OK",dialog);
+    form->addRow(saveSett);
+    QObject::connect(saveSett, SIGNAL (released()), this, SLOT(updateCameraProjection()));
+}
+
+float MainWindow::qcameraFieldVal(const int index)
+{
+    return qcamera_fields.at(index)->text().toFloat();
+}
+
 void MainWindow::updateCameraProjection()
 {
-    float fov = (!qcamera_fields.at(0)->text().isEmpty() ?
-                     qcamera_fields.at(0)->text().toFloat() : cameraEntity->lens()->fieldOfView());
+    Qt3DRender::QCameraLens *lens =  cameraEntity->lens();
+    float fov = (!qcamera_fields.at(3)->text().isEmpty() ?
+                     360*qAtan(qcameraFieldVal(1)/qcameraFieldVal(3))/M_PI : lens->fieldOfView());
 
     float aspectRatio = (!qcamera_fields.at(1)->text().isEmpty() ?
-                             qcamera_fields.at(1)->text().toFloat() : cameraEntity->lens()->aspectRatio());
+                             (qcameraFieldVal(0)*qcameraFieldVal(3))/(qcameraFieldVal(1)*qcameraFieldVal(2)) : lens->aspectRatio());
 
-    float nearPlane = (!qcamera_fields.at(2)->text().isEmpty() ?
-                             qcamera_fields.at(2)->text().toFloat() : cameraEntity->lens()->nearPlane());
+    float nearPlane = (!qcamera_fields.at(4)->text().isEmpty() ?
+                             qcameraFieldVal(4) : lens->nearPlane());
 
-    float farPlane = (!qcamera_fields.at(3)->text().isEmpty() ?
-                             qcamera_fields.at(3)->text().toFloat() : cameraEntity->lens()->farPlane());
+    float farPlane = (!qcamera_fields.at(5)->text().isEmpty() ?
+                             qcameraFieldVal(5) : lens->farPlane());
 
     cameraEntity->lens()->setPerspectiveProjection(fov, aspectRatio, nearPlane, farPlane);
+
+    QString fileName = curXML;
+    QFile fileread(fileName);
+    if (!fileread.open(QFile::ReadOnly | QFile::Text))
+    {
+        QMessageBox::warning(this, tr("Application"),
+                             tr("Cannot read file %1:\n%2.")
+                             .arg(QDir::toNativeSeparators(fileName), fileread.errorString()));
+        return;
+    }
+    QTextStream in(&fileread);
+
+    QFile filewrite("temp.xml");
+    if (!filewrite.open(QFile::WriteOnly | QFile::Text))
+    {
+        QMessageBox::warning(this, tr("Application"),
+                             tr("Cannot write file %1:\n%2.")
+                             .arg(QDir::toNativeSeparators(fileName), filewrite.errorString()));
+        return;
+    }
+
+    QTextStream out(&filewrite);
+
+    while(!in.atEnd())
+    {
+        QString line = in.readLine();
+
+        if(verifyXmlTag("<u0>",line))
+            out << "<u0>" << QString::number(qcameraFieldVal(0)) << "</u0>" << "\n";
+
+        else if(verifyXmlTag("<v0>",line))
+            out << "<v0>" << QString::number(qcameraFieldVal(1)) << "</v0>" << "\n";
+
+        else if(verifyXmlTag("<px>",line))
+            out << "<px>" << QString::number(qcameraFieldVal(2)) << "</px>" << "\n";
+
+        else if(verifyXmlTag("<py>",line))
+            out << "<py>" << QString::number(qcameraFieldVal(3)) << "</py>" << "\n";
+
+        else if(verifyXmlTag("<near_clipping>",line))
+            out << "<near_clipping>" << QString::number(qcameraFieldVal(4)) << "</near_clipping>" << "\n";
+
+        else if(verifyXmlTag("<far_clipping>",line))
+            out << "<far_clipping>" << QString::number(qcameraFieldVal(5)) << "</far_clipping>" << "\n";
+        else
+            out << line << "\n";
+    }
+
+    fileread.close();
+    fileread.remove();
+
+    filewrite.rename("temp.xml", fileName);
+    filewrite.close();
     dialog->accept();
 }
 
@@ -443,7 +486,7 @@ bool MainWindow::saveFile(const QString &fileName)
         data = modifier->circle_param->at(i).split("+");
         out << cir.w() << " " << cir.x() << " " << cir.y() << " " << cir.z() << " " << data[1] << "\n";
     }
-
+    file.close();
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("File saved"), 2000);
     return true;
