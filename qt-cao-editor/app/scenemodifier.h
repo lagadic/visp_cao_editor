@@ -80,6 +80,8 @@ private slots:
                      const unsigned int index, const bool axis, const QString &lod_param);
     void getLineLength();
 
+    void formAddField(QDialog *dialog, QFormLayout *form,
+                      const QString tag, const QString text);
     int primitiveType(const QString &type);
     QString getLodParameters(const QStringList &data, const QString &type,
                           const unsigned int idx1, const unsigned int idx2);
@@ -98,7 +100,7 @@ private:
     Qt::MouseButton m_mouseButton;
 
     QList<Qt3DCore::QEntity *> scene_entities;
-
+    QList<QLineEdit *> fields;
 };
 
 #endif // SCENEMODIFIER_H

@@ -326,7 +326,7 @@ void SceneModifier::createLines(const QVector3D &v0, const QVector3D &v1,
 }
 
 void SceneModifier::createCylinder(const QVector3D &axis_1, const QVector3D &axis_2,
-                                   const unsigned int index, const float radius, const QString &load_param)
+                                   const unsigned int index, const float radius, const QString &lod_param)
 {
     QVector3D main_axis = axis_2 - axis_1;
     QVector3D mid_point = (axis_1 + axis_2) / 2;
@@ -349,12 +349,12 @@ void SceneModifier::createCylinder(const QVector3D &axis_1, const QVector3D &axi
     m_cylinderEntity->addComponent(caoMaterial);
     m_cylinderEntity->addComponent(cylinderTransform);
 
-    m_cylinderEntity->setObjectName(QString::number(index)+ ":" +load_param);
+    m_cylinderEntity->setObjectName(QString::number(index)+ ":" +lod_param);
     createObjectPickerForEntity(m_cylinderEntity);
 }
 
 void SceneModifier::createCircle(const QVector3D &circum_1, const QVector3D &circum_2, const QVector3D &center,
-                                 const unsigned int index, const float radius, const QString &load_param)
+                                 const unsigned int index, const float radius, const QString &lod_param)
 {
     Qt3DExtras::QTorusMesh *circle = new Qt3DExtras::QTorusMesh();
     circle->setRadius(radius);
@@ -375,7 +375,7 @@ void SceneModifier::createCircle(const QVector3D &circum_1, const QVector3D &cir
     m_circleEntity->addComponent(caoMaterial);
     m_circleEntity->addComponent(circleTransform);
 
-    m_circleEntity->setObjectName(QString::number(index) + ":" + load_param);
+    m_circleEntity->setObjectName(QString::number(index) + ":" + lod_param);
     createObjectPickerForEntity(m_circleEntity);
 }
 
@@ -408,6 +408,15 @@ bool SceneModifier::handleMousePress(QMouseEvent *event)
     return false;
 }
 
+void SceneModifier::formAddField(QDialog *dialog, QFormLayout *form,
+                                 const QString tag, const QString text)
+{
+    QLineEdit *lineEdit = new QLineEdit(dialog);
+    lineEdit->setText(text);
+    form->addRow(tag, lineEdit);
+    fields << lineEdit;
+}
+
 void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
 {
     if (event->button() == Qt3DRender::QPickEvent::RightButton)
@@ -415,75 +424,59 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())
         {
+            QString temp = "hello world, hello my name";
+            QString match = "hello world";
+            qInfo() << temp.contains(match);
             QStringList data = pressedEntity->objectName().split("+");
             QString m_template = data[0].split(":")[1];
-            int index = data[0].split(":")[0].toInt();
-            qInfo() << data << m_template << index;
-
             QStringList lod_param = data[1].split(" ");
+            int index = data[0].split(":")[0].toInt();
+            fields.clear();
+            QString lod_name, lod_useLod, lod_minLine, lod_minPoly;
 
             for(int i=0;i<lod_param.length();i++)
                 if(lod_param[i]=="")
                     lod_param.removeAt(i);
 
-            QString lod_name = (lod_param.length() >= 1 ? (lod_param[0].split("name=").length() == 2 ? lod_param[0].split("name=")[1] : "") : "");
-            QString lod_useLod = (lod_param.length() >= 2 ?
-                                      (lod_param[1].split("useLod=").length() == 2 ?
-                                          lod_param[1].split("useLod=")[1] :
-                                  (lod_param[0].split("useLod=").length() == 2 ?
-                                      lod_param[0].split("useLod=")[1] : "")) : "");
+            if (lod_param.length())
+            {
+                if (lod_param[0][5]=="\"")
+                {
+                    lod_param[0] += " " + lod_param[1];
+                    lod_param.removeAt(1);
+                }
 
-            QString lod_minLine = (lod_param.length() >= 2 ?
-                                       (lod_param[2].split("minLineLengthThreshold=").length() == 2 ?
-                                           lod_param[2].split("minLineLengthThreshold=")[1] :
-                                   (lod_param[1].split("minLineLengthThreshold=").length() == 2 ?
-                                       lod_param[1].split("minLineLengthThreshold=")[1] : "")) : "");
+                for(int i=0;i<lod_param.length();i++)
+                {
+                    if(lod_param[i].contains("name="))
+                        lod_name = lod_param[i].split("name=")[1];
+                    else if(lod_param[i].contains("useLod="))
+                        lod_useLod = lod_param[i].split("useLod=")[1];
+                    else if(lod_param[i].contains("minLineLengthThreshold="))
+                        lod_minLine = lod_param[i].split("minLineLengthThreshold=")[1];
+                    else if(lod_param[i].contains("minPolygonAreaThreshold="))
+                        lod_minPoly = lod_param[i].split("minPolygonAreaThreshold=")[1];
+                }
 
-            QString lod_minPoly = (lod_param.length() >= 2 ?
-                                       (lod_param[2].split("minPolygonAreaThreshold=").length() == 2 ?
-                                           lod_param[2].split("minPolygonAreaThreshold=")[1] :
-                                   (lod_param[1].split("minPolygonAreaThreshold=").length() == 2 ?
-                                       lod_param[1].split("minPolygonAreaThreshold=")[1] : "")) : "");
+            }
 
             QDialog dialog(m_parentWidget);
             QFormLayout form(&dialog);
 
             form.addRow(new QLabel("LOD parameters"));
 
-            QList<QLineEdit *> fields;
-
-            QLineEdit *lineEdit1 = new QLineEdit(&dialog);
-            lineEdit1->setText(lod_name);
-            form.addRow(QString("name "), lineEdit1);
-            fields << lineEdit1;
-
-            QLineEdit *lineEdit2 = new QLineEdit(&dialog);
-            lineEdit2->setText(lod_useLod);
-            form.addRow(QString("useLod "), lineEdit2);
-            fields << lineEdit2;
-
-            QLineEdit *lineEdit3 = new QLineEdit(&dialog);
-            lineEdit3->setText(lod_minLine);
+            this->formAddField(&dialog, &form, QString("name "), lod_name);
+            this->formAddField(&dialog, &form, QString("useLod "), lod_useLod);
+            this->formAddField(&dialog, &form, QString("minLineLengthThreshold "), lod_minLine);
+            this->formAddField(&dialog, &form, QString("minPolygonAreaThreshold "), lod_minPoly);
 
 //            QPushButton *lineLength = new QPushButton("Update", &dialog);
 //            QObject::connect(lineLength, SIGNAL (released()), this, SLOT(getLineLength()));
-
 //            QHBoxLayout hBoxLayout;
 //            hBoxLayout.addWidget(lineEdit3);
 //            hBoxLayout.addWidget(lineLength);
-
 //            QWidget container;
 //            container.setLayout(&hBoxLayout);
-
-            form.addRow(QString("minLineLengthThreshold "), lineEdit3);
-            fields << lineEdit3;
-
-
-
-            QLineEdit *lineEdit4 = new QLineEdit(&dialog);
-            lineEdit4->setText(lod_minPoly);
-            form.addRow(QString("minPolygonAreaThreshold "), lineEdit4);
-            fields << lineEdit4;
 
             QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
                                        Qt::Horizontal, &dialog);
@@ -507,22 +500,24 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
                     }
                     idx++;
                 }
+                pressedEntity->setObjectName(data[0]+new_lod_param);
+
+                if(!m_template.compare("3D_LNS", Qt::CaseSensitive))
+                    line_param->replace(index, new_lod_param);
+
+                else if(!m_template.compare("3D_F_LNS", Qt::CaseSensitive))
+                    faceline_param->replace(index, new_lod_param);
+
+                else if(!m_template.compare("3D_F_PTS", Qt::CaseSensitive))
+                    facepoint_param->replace(index, new_lod_param);
+
+                else if(!m_template.compare("3D_CYL", Qt::CaseSensitive))
+                    cylinder_param->replace(index, new_lod_param);
+
+                else if(!m_template.compare("3D_CIR", Qt::CaseSensitive))
+                    circle_param->replace(index, new_lod_param);
+                qInfo() << index << new_lod_param;
             }
-
-            if(!m_template.compare("3D_LNS", Qt::CaseSensitive))
-                line_param->replace(index, new_lod_param);
-
-            else if(!m_template.compare("3D_F_LNS", Qt::CaseSensitive))
-                faceline_param->replace(index, new_lod_param);
-
-            else if(!m_template.compare("3D_F_PTS", Qt::CaseSensitive))
-                facepoint_param->replace(index, new_lod_param);
-
-            else if(!m_template.compare("3D_CYL", Qt::CaseSensitive))
-                cylinder_param->replace(index, new_lod_param);
-
-            else if(!m_template.compare("3D_CIR", Qt::CaseSensitive))
-                circle_param->replace(index, new_lod_param);
         }
     }
 }
