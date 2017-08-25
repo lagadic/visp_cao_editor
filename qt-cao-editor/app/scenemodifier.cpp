@@ -94,6 +94,7 @@ void SceneModifier::parse3DFile(QTextStream &input, const bool useBlenderFrame)
     lineRawData = new QList<QVector2D>();
     cylinder = new QList<QVector3D>();
     circle = new QList<QVector4D>();
+    init_points = new QList<QVector3D>();
 
     line_param = new QList<QString>();
     faceline_param = new QList<QString>();
@@ -148,6 +149,7 @@ void SceneModifier::parse3DFile(QTextStream &input, const bool useBlenderFrame)
                 QVector3D v(data[0].toFloat(), data[1].toFloat(), data[2].toFloat());
                 vertices->append(v);
             }
+            this->createPoints(vertices->last(), QString::number(vertices->length()-1));
         }
 
         else if(!m_template.compare("3D_LNS", Qt::CaseSensitive) && data_size >= 2)
@@ -379,6 +381,32 @@ void SceneModifier::createCircle(const QVector3D &circum_1, const QVector3D &cir
     createObjectPickerForEntity(m_circleEntity);
 }
 
+void SceneModifier::createPoints(const QVector3D &point, const QString index)
+{
+    Qt3DExtras::QSphereMesh *sphere = new Qt3DExtras::QSphereMesh();
+    sphere->setRadius(0.4);
+
+    Qt3DCore::QTransform *sphereTransform = new Qt3DCore::QTransform();
+    sphereTransform->setTranslation(point);
+
+    Qt3DExtras::QPhongMaterial *sphereColor = new Qt3DExtras::QPhongMaterial();
+    sphereColor->setDiffuse(QColor(255,0,0,255));
+
+    Qt3DCore::QEntity *m_sphereEntity = new Qt3DCore::QEntity(m_rootEntity);
+    m_sphereEntity->setObjectName(index);
+    m_sphereEntity->addComponent(sphere);
+    m_sphereEntity->addComponent(sphereTransform);
+    m_sphereEntity->addComponent(sphereColor);
+    m_sphereEntity->setEnabled(false);
+
+    Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(m_sphereEntity);
+    picker->setHoverEnabled(false);
+    m_sphereEntity->addComponent(picker);
+    connect(picker, &Qt3DRender::QObjectPicker::pressed, this, &SceneModifier::handlePointSelect);
+
+    scene_points.append(m_sphereEntity);
+}
+
 Qt3DRender::QObjectPicker *SceneModifier::createObjectPickerForEntity(Qt3DCore::QEntity *entity)
 {
     Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(entity);
@@ -395,6 +423,13 @@ void SceneModifier::removeSceneElements()
     {
         entity->setEnabled(false);
     }
+    scene_entities.clear();
+    Q_FOREACH (Qt3DCore::QEntity *entity, scene_points)
+    {
+        entity->setEnabled(false);
+    }
+    scene_points.clear();
+    init_points->clear();
 }
 
 void SceneModifier::getLineLength()
@@ -417,6 +452,21 @@ void SceneModifier::formAddField(QDialog *dialog, QFormLayout *form,
     fields << lineEdit;
 }
 
+void SceneModifier::handlePointSelect(Qt3DRender::QPickEvent *event)
+{
+    if (event->button() == Qt3DRender::QPickEvent::RightButton)
+    {
+        Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
+        if (pressedEntity && pressedEntity->isEnabled())
+        {
+            Qt3DExtras::QPhongMaterial *sphereColor = new Qt3DExtras::QPhongMaterial();
+            sphereColor->setDiffuse(QColor(0,255,0,255));
+            pressedEntity->addComponent(sphereColor);
+            init_points->append(vertices->at(pressedEntity->objectName().toInt()));
+        }
+    }
+}
+
 void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
 {
     if (event->button() == Qt3DRender::QPickEvent::RightButton)
@@ -424,9 +474,6 @@ void SceneModifier::handlePickerPress(Qt3DRender::QPickEvent *event)
         Qt3DCore::QEntity *pressedEntity = qobject_cast<Qt3DCore::QEntity *>(sender()->parent());
         if (pressedEntity && pressedEntity->isEnabled())
         {
-            QString temp = "hello world, hello my name";
-            QString match = "hello world";
-            qInfo() << temp.contains(match);
             QStringList data = pressedEntity->objectName().split("+");
             QString m_template = data[0].split(":")[1];
             QStringList lod_param = data[1].split(" ");

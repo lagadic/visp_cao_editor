@@ -80,6 +80,10 @@ private:
     void readSettings();
     void writeSettings();
     void blenderFrameStateChanged(int state);
+    void toggleVertices(int state);
+    void toggleModels(int state);
+    void resetInitPoints();
+    bool saveInitPoints();
     bool maybeSave();
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);

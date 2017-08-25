@@ -41,7 +41,9 @@
         <file>images/icon_refresh.svg</file>
         <file>images/icon_new_file.svg</file>
         <file>images/icon_window.png</file>
-	<file>images/icon_xml.png</file>
-	<file>images/icon_import_cao.png</file>
+    	<file>images/icon_xml.png</file>
+    	<file>images/icon_import_cao.png</file>
+    	<file>images/icon_init_points.png</file>
+        <file>images/icon_save_init.png</file>
     </qresource>
 </RCC>

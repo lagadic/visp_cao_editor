@@ -70,30 +70,5 @@ int main(int argc, char **argv)
     mainWin.resize(800, 600);
     mainWin.show();
 
-// #ifndef QT_NO_OPENGL
-
-// #else
-//     QLabel note("OpenGL Support required");
-//     note.show();
-// #endif
-
-    // QWidget *widget = new QWidget;
-    // QHBoxLayout *hLayout = new QHBoxLayout(widget);
-    // QVBoxLayout *vLayout = new QVBoxLayout();
-    // vLayout->setAlignment(Qt::AlignTop);
-    // hLayout->addWidget(sceneContainer, 1);
-    // hLayout->addLayout(vLayout);
-    // widget->setWindowTitle(QStringLiteral("Basic shapes"));
-    // Create control widgets
-//     QCommandLinkButton *info = new QCommandLinkButton();
-//     info->setText(QStringLiteral("Qt3D ready-made meshes"));
-//     info->setDescription(QString::fromLatin1("Qt3D provides several ready-made meshes, like torus, cylinder, cone, "
-//                                              "cube, plane and sphere."));
-//     info->setIconSize(QSize(0,0));
-//     vLayout->addWidget(info);
-//     QObject::connect(torusCB, &QCheckBox::stateChanged,
-//                      modifier, &SceneModifier::enableTorus);
-//     torusCB->setChecked(true);
-
     return app.exec();
 }

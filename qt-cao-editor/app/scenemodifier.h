@@ -63,6 +63,9 @@ public:
     QList<QString>* cylinder_param;
     QList<QString>* circle_param;
 
+    QList<QVector3D>* init_points;
+    QList<Qt3DCore::QEntity *> scene_points;
+    QList<Qt3DCore::QEntity *> scene_entities;
     Qt3DRender::QObjectPicker *createObjectPickerForEntity(Qt3DCore::QEntity *entity);
 
 public slots:
@@ -72,12 +75,15 @@ public slots:
 
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
+    void handlePointSelect(Qt3DRender::QPickEvent *event);
+
     void createCylinder(const QVector3D &axis_1, const QVector3D &axis_2,
                         const unsigned int index, const float radius, const QString &load_param);
     void createCircle(const QVector3D &circum_1, const QVector3D &circum_2, const QVector3D &center,
                       const unsigned int index, const float radius, const QString &load_param);
     void createLines(const QVector3D &v0, const QVector3D &v1,
                      const unsigned int index, const bool axis, const QString &lod_param);
+    void createPoints(const QVector3D &point, const QString index);
     void getLineLength();
 
     void formAddField(QDialog *dialog, QFormLayout *form,
@@ -99,7 +105,6 @@ private:
 
     Qt::MouseButton m_mouseButton;
 
-    QList<Qt3DCore::QEntity *> scene_entities;
     QList<QLineEdit *> fields;
 };
 

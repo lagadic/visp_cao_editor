@@ -92,7 +92,7 @@ void MainWindow::qcameraDialog()
     form = new QFormLayout(dialog);
     form->addRow(new QLabel("QCamera Settings"));
 
-
+    qcamera_fields.clear();
     QPushButton *openXML = new QPushButton("Choose XML",dialog);
 //    openXML->setGeometry(QRect(QPoint(30, 30),
 //                               QSize(20, 50)));
@@ -166,6 +166,25 @@ void MainWindow::createActions()
     connect(qCam, &QAction::triggered, this, &MainWindow::qcameraDialog);
     xmlToolBar->addAction(qCam);
 
+    QToolBar *pointToolBar = addToolBar(tr("Point Select"));
+
+//    QCheckBox *displayModelsAct = new QCheckBox(tr("Display Objects"));
+//    connect(displayModelsAct, &QCheckBox::stateChanged, this, &MainWindow::toggleModels);
+//    pointToolBar->addWidget(displayModelsAct);
+
+    QCheckBox *displayInitAct = new QCheckBox(tr("Display Vertices"));
+    connect(displayInitAct, &QCheckBox::stateChanged, this, &MainWindow::toggleVertices);
+    pointToolBar->addWidget(displayInitAct);
+
+    QAction *getinitAct = new QAction(QIcon(":/images/icon_init_points.png"), tr("&Reset Init Points"), this);
+    getinitAct->setStatusTip(tr("Reset Init Points"));
+    connect(getinitAct, &QAction::triggered, this, &MainWindow::resetInitPoints);
+    pointToolBar->addAction(getinitAct);
+
+    QAction *saveinitAct = new QAction(QIcon(":/images/icon_save_init.png"), tr("&Save Init Points"), this);
+    saveinitAct->setStatusTip(tr("Save Init Points"));
+    connect(saveinitAct, &QAction::triggered, this, &MainWindow::saveInitPoints);
+    pointToolBar->addAction(saveinitAct);
 
     caoMenu->addSeparator();
 
@@ -213,6 +232,65 @@ void MainWindow::writeSettings()
 void MainWindow::blenderFrameStateChanged(int state)
 {
     useBlenderFrame = (state == Qt::CheckState::Checked);
+}
+
+void MainWindow::toggleModels(int state)
+{
+    Q_FOREACH (Qt3DCore::QEntity *entity, modifier->scene_entities)
+    {
+        entity->setEnabled((state == Qt::CheckState::Checked));
+    }
+}
+
+void MainWindow::toggleVertices(int state)
+{
+    Q_FOREACH (Qt3DCore::QEntity *entity, modifier->scene_points)
+    {
+        entity->setEnabled((state == Qt::CheckState::Checked));
+    }
+}
+
+void MainWindow::resetInitPoints()
+{
+    Q_FOREACH (Qt3DCore::QEntity *entity, modifier->scene_points)
+    {
+        Qt3DExtras::QPhongMaterial *sphereColor = new Qt3DExtras::QPhongMaterial();
+        sphereColor->setDiffuse(QColor(255,0,0,255));
+        entity->addComponent(sphereColor);
+        entity->setObjectName("");
+    }
+    modifier->init_points->clear();
+}
+
+bool MainWindow::saveInitPoints()
+{
+    QFileDialog dialog(this);
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    if (dialog.exec() != QDialog::Accepted)
+        return false;
+
+    const QString fileName = dialog.selectedFiles().first();
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text))
+    {
+            QMessageBox::warning(this, tr("Application"),
+                                 tr("Cannot write file %1:\n%2.")
+                                 .arg(QDir::toNativeSeparators(fileName),
+                                      file.errorString()));
+            return false;
+    }
+    QTextStream out(&file);
+    out << modifier->init_points->length() << "\n";
+
+    for(unsigned int i=0;i<modifier->init_points->length();i++)
+    {
+        QVector3D v = modifier->init_points->at(i);
+        out << v.x() << " " << v.y() << " " << v.z() << "\n";
+    }
+
+    file.close();
+    return true;
 }
 
 bool MainWindow::maybeSave()
