@@ -562,7 +562,7 @@ bool MainWindow::saveFile(const QString &fileName)
     {
         QVector4D cir = modifier->circle->at(i);
         data = modifier->circle_param->at(i).split("+");
-        out << cir.w() << " " << cir.x() << " " << cir.y() << " " << cir.z() << " " << data[1] << "\n";
+        out << cir.x() << " " << cir.y() << " " << cir.z() << " " << cir.w() << " " << data[1] << "\n";
     }
     file.close();
     setCurrentFile(fileName);

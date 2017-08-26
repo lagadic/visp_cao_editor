@@ -189,7 +189,6 @@ void SceneModifier::parse3DFile(QTextStream &input, const bool useBlenderFrame)
 
         else if(!m_template.compare("3D_F_PTS", Qt::CaseSensitive) && data_size > 3)
         { 
-            //QRegExp re(".*[a-z]");
             QList<int> faceMap;
             unsigned int num_pts = data[0].toInt();
             faceMap.append(num_pts);
