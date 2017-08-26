@@ -53,7 +53,7 @@ public:
     QList<QVector3D>* vertices;
     QList<QVector2D>* lineRawData;
     QList<QList<int>> facelineRawData;
-    QList<QList<int>> facelpointRawData;
+    QList<QList<int>> facepointRawData;
     QList<QVector3D>* cylinder;
     QList<QVector4D>* circle;
 
@@ -88,7 +88,8 @@ private slots:
 
     void formAddField(QDialog *dialog, QFormLayout *form,
                       const QString tag, const QString text);
-    int primitiveType(const QString &type);
+
+    void initData();
     QString getLodParameters(const QStringList &data, const QString &type,
                           const unsigned int idx1, const unsigned int idx2);
 
@@ -105,7 +106,16 @@ private:
 
     Qt::MouseButton m_mouseButton;
 
+    unsigned int vertices_index;
+    unsigned int lineRawData_index;
+    unsigned int facelineRawData_index;
+    unsigned int facepointRawData_index;
+    unsigned int cylinder_index;
+    unsigned int circle_index;
+
+
     QList<QLineEdit *> fields;
+
 };
 
 #endif // SCENEMODIFIER_H

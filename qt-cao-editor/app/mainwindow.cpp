@@ -533,10 +533,10 @@ bool MainWindow::saveFile(const QString &fileName)
     }
 
     // Faces from 3D points
-    out << "# Faces from 3D points\n" << modifier->facelpointRawData.length() << "\n";
-    for(int i=0;i<modifier->facelpointRawData.length();i++)
+    out << "# Faces from 3D points\n" << modifier->facepointRawData.length() << "\n";
+    for(int i=0;i<modifier->facepointRawData.length();i++)
     {
-        QList<int> faceMap_list = modifier->facelpointRawData.at(i);
+        QList<int> faceMap_list = modifier->facepointRawData.at(i);
         QString faceMap_str;
         for(int i=0; i<faceMap_list.length(); i++)
         {
