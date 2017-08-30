@@ -53,7 +53,7 @@ public:
     QList<QVector3D>* vertices;
     QList<QVector2D>* lineRawData;
     QList<QList<int>> facelineRawData;
-    QList<QList<int>> facelpointRawData;
+    QList<QList<int>> facepointRawData;
     QList<QVector3D>* cylinder;
     QList<QVector4D>* circle;
 
@@ -63,6 +63,9 @@ public:
     QList<QString>* cylinder_param;
     QList<QString>* circle_param;
 
+    QList<QVector3D>* init_points;
+    QList<Qt3DCore::QEntity *> scene_points;
+    QList<Qt3DCore::QEntity *> scene_entities;
     Qt3DRender::QObjectPicker *createObjectPickerForEntity(Qt3DCore::QEntity *entity);
 
 public slots:
@@ -72,15 +75,21 @@ public slots:
 
 private slots:
     void handlePickerPress(Qt3DRender::QPickEvent *event);
+    void handlePointSelect(Qt3DRender::QPickEvent *event);
+
     void createCylinder(const QVector3D &axis_1, const QVector3D &axis_2,
                         const unsigned int index, const float radius, const QString &load_param);
     void createCircle(const QVector3D &circum_1, const QVector3D &circum_2, const QVector3D &center,
                       const unsigned int index, const float radius, const QString &load_param);
     void createLines(const QVector3D &v0, const QVector3D &v1,
                      const unsigned int index, const bool axis, const QString &lod_param);
+    void createPoints(const QVector3D &point, const QString index);
     void getLineLength();
 
-    int primitiveType(const QString &type);
+    void formAddField(QDialog *dialog, QFormLayout *form,
+                      const QString tag, const QString text);
+
+    void initData();
     QString getLodParameters(const QStringList &data, const QString &type,
                           const unsigned int idx1, const unsigned int idx2);
 
@@ -97,7 +106,15 @@ private:
 
     Qt::MouseButton m_mouseButton;
 
-    QList<Qt3DCore::QEntity *> scene_entities;
+    unsigned int vertices_index;
+    unsigned int lineRawData_index;
+    unsigned int facelineRawData_index;
+    unsigned int facepointRawData_index;
+    unsigned int cylinder_index;
+    unsigned int circle_index;
+
+
+    QList<QLineEdit *> fields;
 
 };
 
