@@ -113,12 +113,7 @@ def load(operator, context, filepath,
     def regex_search(text,line):
         return bool(re.search(text,line,re.IGNORECASE))
 
-    nPoints = 0
-    nLines = 0
     nFacelines = 0
-    nFacepoints = 0
-    nCylinder = 0
-    nCircles = 0
 
     seed = ["b","l","e","n","d","r","v","t","i","s","p","a","z","y"]
     verts_loc = []
@@ -128,6 +123,12 @@ def load(operator, context, filepath,
     cylinders = []
     circles = []
 
+    t_defined = ["3D_PTS", 
+                "3D_LNS",
+                "3D_F_LNS",
+                "3D_F_PTS",
+                "3D_CYL",
+                "3D_CIR"]
 
     with ProgressReport(context.window_manager) as progress:
         progress.enter_substeps(1, "Importing CAO %r..." % filepath)
@@ -144,6 +145,7 @@ def load(operator, context, filepath,
 
         scene = context.scene
         new_objects = []  # put new objects here
+        index = 0
 
         progress.enter_substeps(3, "Parsing CAO file...")
         with open(filepath, 'rb') as f:
@@ -153,133 +155,63 @@ def load(operator, context, filepath,
                 if not line_split:
                     continue
 
+                line_void = line.replace(b'\t', b'').replace(b' ', b'')
+
+                if not line_void.split(b'#')[0]:
+                    continue
+
                 data = line.split(b'#')[0].split()
+                data_size = len(data)
 
-                if regex_search(b'^.*# +3d +points.*',line):
-                    TEMPLATE_FLAG = "3D_PTS"
-                    data = []
-
-                elif regex_search(b'^.*# +3d +lines.*',line):
-                    TEMPLATE_FLAG = "3D_LNS"
-                    data = []
-
-                elif regex_search(b'^.*# +Faces +from +3D +lines.*',line):
-                    TEMPLATE_FLAG = "3D_F_LNS"
-                    data = []
-
-                elif regex_search(b'^.*# +Faces +from +3D +points.*',line):
-                    TEMPLATE_FLAG = "3D_F_PTS"
-                    data = []
-
-                elif regex_search(b'^.*# +3d +cylinders.*',line):
-                    TEMPLATE_FLAG = "3D_CYL"
-                    data = []
-
-                elif regex_search(b'^.*# +3d +circles.*',line):
-                    TEMPLATE_FLAG = "3D_CIR"
-                    data = []
+                if data_size == 1:
+                    if data[0].isdigit():
+                        TEMPLATE_FLAG = t_defined[index]
+                        index += 1
 
                 if TEMPLATE_FLAG == "3D_PTS":
-                    if len(data) == 1:
-                        nPoints = int(data[0])
-                    elif len(data) == 3:
+                    if len(data) == 3:
                         verts_loc.append(list(map(float,[x for x in data])))
-                    elif len(data) == 0:
-                        pass
-                    else:
-                        print("\tERROR: Invalid CAO File")
 
                 elif TEMPLATE_FLAG == "3D_LNS":
-                    if len(data) == 1:
-                        nLines =int(data[0])
-                    elif len(data) == 2:
-                        lines.append(list(map(int,[x for x in data])))
-                    elif len(data) == 0:
-                        pass
-                    else:
-                        print("\tERROR: Invalid CAO File")
+                    if len(data) >= 2:
+                        lines.append(list(map(int,[x for x in data[:2]])))
 
                 elif TEMPLATE_FLAG == "3D_F_LNS":
                     if len(data) == 1:
                         nFacelines =int(data[0])
                         if nFacelines == 0 and len(lines) > 0:
-                            shuffle(seed)
                             # import only lines
+                            shuffle(seed)
                             create_mesh(global_matrix,verts_loc,lines,[],[],[],[],TEMPLATE_FLAG,"3D Lines" + "_" + "".join(seed))                                                
-                            pass
+
                     elif len(data) >= 4:
-                        face_lines.append(list(map(int,[x for x in data[1:]])))
+                        face_lines.append(list(map(int,[data[i] for i in range(1,int(data[0])+1)])))
                         shuffle(seed)
                         verts = [verts_loc[i] for i in [lines[i][0] for i in face_lines[-1]]]
                         create_mesh(global_matrix,verts,[],[],[list(range(len(verts)))],[],[],TEMPLATE_FLAG,"3D Lines" + "_" + "".join(seed))                    
-                    elif len(data) == 0:
-                        pass
-                    else:
-                        print("\tERROR: Invalid CAO File")
 
                 elif TEMPLATE_FLAG == "3D_F_PTS":
-                    if len(data) == 1:
-                        nFacepoints =int(data[0])
-                    elif len(data) >= 4:
-                        face_points.append(list(map(int,[x for x in data[1:]])))
+                    if len(data) >= 4:
+                        face_points.append(list(map(int,[data[i] for i in range(1,int(data[0])+1)])))
                         shuffle(seed)
                         verts = [verts_loc[i] for i in face_points[-1]]
                         create_mesh(global_matrix,verts,[],[],[list(range(len(verts)))],[],[],TEMPLATE_FLAG,"3D Faces" + "_" + "".join(seed))
-                    elif len(data) == 0:
-                        pass
-                    else:
-                        print("\tERROR: Invalid CAO File")
 
                 elif TEMPLATE_FLAG == "3D_CYL":
-                    if len(data) == 1:
-                        nCylinder =int(data[0])
-                    elif len(data) == 3:
+                    if len(data) >= 3:
                         cylinders = [verts_loc[int(data[0])],verts_loc[int(data[1])],float(data[2])]
                         shuffle(seed)
                         create_mesh(global_matrix,verts_loc,[],[],[],cylinders,[],TEMPLATE_FLAG,"3D Cylinder" + "_" + "".join(seed))                        
-                    elif len(data) == 0:
-                        pass
-                    else:
-                        print("\tERROR: Invalid CAO File")
 
                 elif TEMPLATE_FLAG == "3D_CIR":
-                    if len(data) == 1:
-                        nCircles =int(data[0])
-                    elif len(data) == 4:
+                    if len(data) >= 4:
                         circles = [verts_loc[int(data[2])],verts_loc[int(data[3])],verts_loc[int(data[1])],float(data[0])]
                         shuffle(seed)
                         create_mesh(global_matrix,verts_loc,[],[],[],[],circles,TEMPLATE_FLAG,"3D Cylinder" + "_" + "".join(seed))                        
-                    elif len(data) == 0:
-                        pass
-                    else:
-                        print("\tERROR: Invalid CAO File")
 
         progress.step("Done")
 
         scene.update()
-
-        axis_min = [1000000000] * 3
-        axis_max = [-1000000000] * 3
-
-        # if global_clamp_size:
-        #     # Get all object bounds
-        #     for ob in new_objects:
-        #         for v in ob.bound_box:
-        #             for axis, value in enumerate(v):
-        #                 if axis_min[axis] > value:
-        #                     axis_min[axis] = value
-        #                 if axis_max[axis] < value:
-        #                     axis_max[axis] = value
-
-        #     # Scale objects
-        #     max_axis = max(axis_max[0] - axis_min[0], axis_max[1] - axis_min[1], axis_max[2] - axis_min[2])
-        #     scale = 1.0
-
-        #     while global_clamp_size < max_axis * scale:
-        #         scale = scale / 10.0
-
-            # for obj in new_objects:
-            #     obj.scale = scale, scale, scale
 
         progress.leave_substeps("Done.")
         progress.leave_substeps("Finished importing: %r" % filepath)
